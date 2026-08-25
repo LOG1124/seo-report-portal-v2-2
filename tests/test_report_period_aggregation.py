@@ -153,6 +153,30 @@ class ReportPeriodAggregationTests(unittest.TestCase):
             payload = json.loads(embedded.group(1))
             self.assertIn("PREVIOUS_PERIOD_ARCHIVE_MISSING", [item["code"] for item in payload["diagnostics"]])
 
+    def test_user_selected_in_progress_month_generates_without_preview_label(self) -> None:
+        """A present-month archive is publishable as the requested period, not silently reclassified."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            archive_dir = root / "archives"
+            current = archive(
+                "example.com", clicks=1, impressions=10, sessions=1, key_events=0,
+                channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
+            )
+            current["period"] = ["2026-08-01", "2026-08-25"]
+            self.write_archive(archive_dir, "2026-08", current)
+            output_root = root / "dashboards"
+            args = [
+                "generate_dashboard_report.py", "--type", "monthly", "--start-month", "2026-08", "--domain", "example.com",
+                "--archive-dir", str(archive_dir), "--template", str(PACKAGE / "assets" / "dashboard-template.html"),
+                "--output-root", str(output_root), "--diagnostics-root", str(root / "diagnostics"),
+            ]
+            with patch.object(sys, "argv", args):
+                self.assertEqual(generate_report(), 0)
+            report_dir = output_root / "example.com" / "monthly" / "2026-08"
+            payload = json.loads((report_dir / "dashboard-data.json").read_text(encoding="utf-8"))
+            self.assertEqual(payload["report"]["selectedMonths"], ["2026-08"])
+            self.assertNotIn("预览", (report_dir / "summary.md").read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

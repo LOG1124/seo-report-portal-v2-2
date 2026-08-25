@@ -159,7 +159,7 @@ def build_action_plans(months: List[Dict[str, Any]], report_type: str) -> List[D
     impressions = sum(_value(month.get("metrics", {}), "impressions") for month in months)
     clicks = sum(_value(month.get("metrics", {}), "clicks") for month in months)
     site_ctr = clicks / impressions * 100 if impressions else 0.0
-    scope = "本月" if report_type == "monthly" else "完整报告期"
+    scope = "本月" if report_type == "monthly" else "指定报告期"
 
     ctr_pages = [row for row in pages if row["impressions"] > 0]
     ctr_page = max(

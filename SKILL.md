@@ -20,6 +20,7 @@ Work from a team workspace, never from this installed skill directory. Read `ref
 - DataForSEO and SEOAgent are optional report inputs. A report without either archive must still generate from GSC/GA4 data.
 - Validate every current and predecessor GA4/GSC archive against the requested domain before aggregation. A missing predecessor creates a current-period-only report; any cross-domain archive blocks generation.
 - The report-period aggregate is canonical. Monthly selection may change only monthly detail panels; it must never alter management summary, report-period KPIs, channels, strategy metadata, or action plans.
+- The user's explicit continuous month range is authoritative. Generate and, after the normal explicit publication approval, publish that exact range even when its final month is still in progress. Do not silently replace it with the last closed month or add a "preview" label. Use only the data actually available in the selected monthly archives; real archive, permission, or collection failures must remain visible.
 - Hide an optional DataForSEO or SEOAgent panel when its archive scope is invalid. Never fill an empty panel with another month, another client, or a third-party estimate.
 - Every run writes secret-safe internal diagnostics outside public dashboard directories. Tell the user the execution state, location, verified detection, impact, safe actions taken, and next action.
 - Review the local report before publishing. Publish only after explicit approval.
