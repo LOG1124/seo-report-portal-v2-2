@@ -1,0 +1,11 @@
+private/
+.env
+*.env
+config/google-service-account*.json
+workflows/automation/input/google_api_archive/
+workflows/automation/input/dataforseo_keyword_archive/
+workflows/automation/input/seoagent_archive/
+output/dashboards/
+__pycache__/
+*.py[cod]
+.DS_Store

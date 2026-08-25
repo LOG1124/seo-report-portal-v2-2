@@ -1,0 +1,67 @@
+{
+  "archive_version": 1,
+  "provider": "seoagent",
+  "source": "seoagent_standardized",
+  "domain": "example.com",
+  "collection_month": "2026-06",
+  "collected_at": "2026-06-30T09:00:00Z",
+  "status": "complete",
+  "query_scope": {
+    "location": "United States",
+    "language": "English",
+    "seed_keyword": "example product manufacturer",
+    "domain_keyword_limit": 20,
+    "opportunity_limit": 20,
+    "competitor_limit": 3,
+    "keywords_per_competitor": 5
+  },
+  "billing": {
+    "currency": "CNY",
+    "approved_max_amount_yuan": "0.00",
+    "actual_amount_yuan": "0.00",
+    "items": []
+  },
+  "responses": {
+    "domain_keyword_opportunities": {
+      "keywords": [
+        {
+          "keyword": "example product manufacturer",
+          "priority": "P1",
+          "current_rank": 18,
+          "matched_url": "https://example.com/products/",
+          "recommendation": "补充产品能力、认证与询盘入口。",
+          "recommended_page_type": "B2B 落地页",
+          "intent": "commercial"
+        }
+      ]
+    },
+    "domain_keywords": {
+      "keywords": [
+        {
+          "keyword": "example products",
+          "rank": 12,
+          "url": "https://example.com/products/",
+          "traffic_estimate": 2.5
+        }
+      ]
+    },
+    "competitor_keyword_strategy": {
+      "competitors": [
+        {
+          "domain": "competitor.example"
+        }
+      ],
+      "keywords": [
+        {
+          "competitor": "competitor.example",
+          "keyword": "example product supplier",
+          "intent": "commercial",
+          "page_type": "service landing page"
+        }
+      ]
+    }
+  },
+  "data_quality_notes": [
+    "Synthetic example only. Third-party estimates do not replace first-party data."
+  ]
+}

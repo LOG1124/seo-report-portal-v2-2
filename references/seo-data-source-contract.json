@@ -1,0 +1,58 @@
+{
+  "version": 2,
+  "status": "approved",
+  "purpose": "Define one owner for each dashboard metric and prevent duplicate paid collection.",
+  "sources": {
+    "gsc": {
+      "role": "first_party_search_performance_and_keyword_selection",
+      "owns": [
+        "query_clicks",
+        "query_impressions",
+        "query_ctr",
+        "query_average_position",
+        "page_search_performance",
+        "country_and_device_search_performance"
+      ],
+      "rule": "GSC is the only source used to select existing dashboard opportunity keywords."
+    },
+    "ga4": {
+      "role": "first_party_traffic_quality_and_conversion",
+      "owns": [
+        "sessions",
+        "users",
+        "page_views",
+        "engagement",
+        "bounce_rate",
+        "key_events",
+        "channels",
+        "landing_page_behavior"
+      ]
+    },
+    "dataforseo": {
+      "role": "keyword_market_metrics_and_limited_live_serp",
+      "owns": [
+        "search_volume",
+        "cpc",
+        "paid_competition",
+        "monthly_search_trend",
+        "live_serp"
+      ],
+      "rule": "Request only exact GSC-selected dashboard keywords after approval."
+    },
+    "seoagent": {
+      "role": "strategy_opportunities_and_competitor_keyword_directions",
+      "owns": [
+        "priority_optimization_topics",
+        "competitor_keyword_strategy",
+        "external_keyword_discovery"
+      ],
+      "rule": "Treat results as third-party strategy observations; do not use estimated performance values in GSC, GA4, or market-metric fields."
+    }
+  },
+  "collection_guards": [
+    "Never replace GSC or GA4 first-party metrics with third-party estimates.",
+    "Every paid request requires an explicit scope, cost ceiling, and user confirmation.",
+    "Never automatically retry a paid request.",
+    "Store each provider response separately by domain and collection month."
+  ]
+}

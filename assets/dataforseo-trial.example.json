@@ -1,0 +1,18 @@
+{
+  "domain": "example.com",
+  "month": "2026-06",
+  "source_archive": "workflows/automation/input/google_api_archive/example.com/2026-06.json",
+  "location_code": 2840,
+  "language_code": "en",
+  "serp_device": "desktop",
+  "max_keywords": 5,
+  "include_terms": [
+    "example product",
+    "example manufacturer"
+  ],
+  "exclude_terms": [
+    "site:",
+    "-site:"
+  ],
+  "output_archive_dir": "workflows/automation/input/dataforseo_keyword_archive"
+}

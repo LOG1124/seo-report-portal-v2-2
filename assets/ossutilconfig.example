@@ -1,0 +1,6 @@
+# Copy to private/ossutilconfig. Replace placeholders only on the teammate's machine.
+# Never commit, package, upload, or paste these credentials into chat.
+[default]
+accessKeyID=<YOUR_RAM_ACCESS_KEY_ID>
+accessKeySecret=<YOUR_RAM_ACCESS_KEY_SECRET>
+region=<YOUR_OSS_REGION>

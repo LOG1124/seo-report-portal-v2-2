@@ -1,0 +1,2326 @@
+<div id="seo-growth-dashboard-v2">
+  <style>
+    #seo-growth-dashboard-v2 { position:relative; color: var(--foreground); background: transparent; }
+    #seo-growth-dashboard-v2 * { box-sizing: border-box; }
+    #seo-growth-dashboard-v2 .topline { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
+    #seo-growth-dashboard-v2 .eyebrow { color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .client { font-weight:500; margin-top:2px; }
+    #seo-growth-dashboard-v2 .period { text-align:right; color:var(--muted-foreground); white-space:nowrap; }
+    #seo-growth-dashboard-v2 .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; }
+    #seo-growth-dashboard-v2 .panel[hidden] { display:none; }
+    #seo-growth-dashboard-v2 .metrics { margin-bottom:20px; }
+    #seo-growth-dashboard-v2 .metric-value { display:flex; align-items:baseline; gap:7px; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .metric-tag { color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .metric-foot { margin-top:4px; color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .overview-grid { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(220px,.8fr); gap:22px; align-items:start; }
+    #seo-growth-dashboard-v2 .section-head { display:flex; justify-content:space-between; gap:12px; align-items:baseline; margin-bottom:12px; }
+    #seo-growth-dashboard-v2 .section-title { font-weight:500; }
+    #seo-growth-dashboard-v2 .section-note { color:var(--muted-foreground); text-align:right; }
+    #seo-growth-dashboard-v2 .funnel { display:grid; gap:16px; padding-top:4px; }
+    #seo-growth-dashboard-v2 .funnel-row { display:grid; grid-template-columns:92px 1fr 76px; gap:12px; align-items:center; }
+    #seo-growth-dashboard-v2 .funnel-label { color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .track { height:24px; background:var(--muted); border-radius:var(--radius-md); overflow:hidden; }
+    #seo-growth-dashboard-v2 .fill { height:100%; min-width:8px; border-radius:inherit; background:var(--viz-series-1); }
+    #seo-growth-dashboard-v2 .fill.click { background:var(--viz-series-2); }
+    #seo-growth-dashboard-v2 .fill.event { background:var(--viz-series-3); }
+    #seo-growth-dashboard-v2 .funnel-value { text-align:right; font-weight:500; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .conversion-path { display:flex; align-items:center; gap:8px; margin:14px 0 0 104px; color:var(--muted-foreground); flex-wrap:wrap; }
+    #seo-growth-dashboard-v2 .conversion-path strong { color:var(--foreground); }
+    #seo-growth-dashboard-v2 .priority { margin:0; padding:0; list-style:none; display:grid; gap:14px; }
+    #seo-growth-dashboard-v2 .priority li { display:grid; grid-template-columns:28px 1fr; gap:10px; align-items:start; }
+    #seo-growth-dashboard-v2 .rank { display:grid; place-items:center; width:28px; height:28px; border-radius:var(--radius-full); color:var(--primary-foreground); background:var(--primary); font-weight:500; }
+    #seo-growth-dashboard-v2 .priority li:not(:first-child) .rank { color:var(--secondary-foreground); background:var(--secondary); }
+    #seo-growth-dashboard-v2 .priority-title { font-weight:500; }
+    #seo-growth-dashboard-v2 .priority-copy { color:var(--muted-foreground); margin-top:2px; }
+    #seo-growth-dashboard-v2 .chart { width:100%; min-height:310px; }
+    #seo-growth-dashboard-v2 .chart svg { width:100%; height:auto; display:block; overflow:visible; }
+    #seo-growth-dashboard-v2 .axis { fill:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .value { fill:var(--foreground); font-weight:500; }
+    #seo-growth-dashboard-v2 .gridline { stroke:var(--border); stroke-width:1; }
+    #seo-growth-dashboard-v2 .bar-track { fill:var(--muted); }
+    #seo-growth-dashboard-v2 .bar { fill:var(--viz-series-1); }
+    #seo-growth-dashboard-v2 .bar.alt { fill:var(--viz-series-2); }
+    #seo-growth-dashboard-v2 .chart-caption { color:var(--muted-foreground); margin-top:8px; }
+    #seo-growth-dashboard-v2 .hchart { display:grid; gap:12px; padding-top:6px; }
+    #seo-growth-dashboard-v2 .hrow { display:grid; grid-template-columns:86px minmax(90px,1fr) 64px 126px; gap:10px; align-items:center; }
+    #seo-growth-dashboard-v2 .hlabel { text-align:right; color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .htrack { height:24px; border-radius:var(--radius-md); background:var(--muted); overflow:hidden; }
+    #seo-growth-dashboard-v2 .hbar { height:100%; min-width:6px; border-radius:inherit; background:var(--viz-series-1); }
+    #seo-growth-dashboard-v2 .hvalue { text-align:right; font-weight:500; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .hsecondary { text-align:right; color:var(--muted-foreground); white-space:nowrap; }
+    #seo-growth-dashboard-v2 .matrix-label { fill:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .bubble { fill:var(--viz-series-1); fill-opacity:.76; }
+    #seo-growth-dashboard-v2 .bubble.b2 { fill:var(--viz-series-2); }
+    #seo-growth-dashboard-v2 .bubble.b3 { fill:var(--viz-series-3); }
+    #seo-growth-dashboard-v2 .bubble-text { fill:var(--foreground); font-weight:500; text-anchor:middle; pointer-events:none; }
+    #seo-growth-dashboard-v2 .keyword-summary { display:flex; align-items:center; gap:8px 16px; flex-wrap:wrap; margin-bottom:16px; color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .keyword-summary strong { color:var(--foreground); font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .keyword-axis { display:grid; grid-template-columns:minmax(0,1fr) 50px; gap:12px; align-items:end; padding:0 8px 6px; color:var(--muted-foreground); border-bottom:1px solid var(--border); }
+    #seo-growth-dashboard-v2 .keyword-axis-scale { position:relative; height:18px; margin-top:4px; }
+    #seo-growth-dashboard-v2 .keyword-axis-scale span { position:absolute; transform:translateX(-50%); }
+    #seo-growth-dashboard-v2 .keyword-axis-scale span:first-child { left:0; transform:none; }
+    #seo-growth-dashboard-v2 .keyword-axis-scale span:nth-child(2) { left:15.25%; }
+    #seo-growth-dashboard-v2 .keyword-axis-scale span:nth-child(3) { left:32.2%; }
+    #seo-growth-dashboard-v2 .keyword-axis-scale span:last-child { right:0; transform:none; }
+    #seo-growth-dashboard-v2 .keyword-list { display:grid; }
+    #seo-growth-dashboard-v2 .keyword-row { display:grid; grid-template-columns:minmax(0,1fr) 50px; gap:12px; padding:10px 8px; border-bottom:1px solid var(--border); }
+    #seo-growth-dashboard-v2 .keyword-name { overflow-wrap:anywhere; }
+    #seo-growth-dashboard-v2 .rank-track { position:relative; height:9px; margin-top:8px; border-radius:var(--radius-full); background:var(--muted); }
+    #seo-growth-dashboard-v2 .rank-track::before, #seo-growth-dashboard-v2 .rank-track::after { content:""; position:absolute; top:0; bottom:0; width:1px; background:var(--border); }
+    #seo-growth-dashboard-v2 .rank-track::before { left:15.25%; }
+    #seo-growth-dashboard-v2 .rank-track::after { left:32.2%; }
+    #seo-growth-dashboard-v2 .rank-dot { position:absolute; top:50%; width:11px; height:11px; border-radius:50%; transform:translate(-50%,-50%); background:var(--viz-series-1); }
+    #seo-growth-dashboard-v2 .rank-dot.first-page { background:var(--viz-series-3); }
+    #seo-growth-dashboard-v2 .keyword-rank { text-align:right; font-weight:500; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .legend { display:flex; gap:14px; flex-wrap:wrap; color:var(--muted-foreground); margin-bottom:8px; }
+    #seo-growth-dashboard-v2 .legend-item { display:flex; align-items:center; gap:6px; }
+    #seo-growth-dashboard-v2 .swatch { width:10px; height:10px; border-radius:50%; background:var(--viz-series-1); }
+    #seo-growth-dashboard-v2 .swatch.alt { background:var(--viz-series-2); }
+    #seo-growth-dashboard-v2 .page-list { display:grid; gap:0; }
+    #seo-growth-dashboard-v2 .page-row { display:grid; grid-template-columns:minmax(170px,1.5fr) repeat(4,minmax(52px,.55fr)) minmax(116px,.8fr); gap:10px; align-items:center; padding:12px 8px; border-bottom:1px solid var(--border); }
+    #seo-growth-dashboard-v2 .page-row.header { color:var(--muted-foreground); padding-top:4px; }
+    #seo-growth-dashboard-v2 .num { text-align:right; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .signal { display:flex; align-items:center; gap:7px; }
+    #seo-growth-dashboard-v2 .dot { width:8px; height:8px; border-radius:50%; background:var(--viz-series-1); flex:none; }
+    #seo-growth-dashboard-v2 .dot.warn { background:var(--viz-series-2); }
+    #seo-growth-dashboard-v2 .timeline { max-width:660px; margin:0 auto; }
+    #seo-growth-dashboard-v2 .phase { display:grid; grid-template-columns:72px 24px 1fr; gap:12px; min-height:124px; }
+    #seo-growth-dashboard-v2 .phase-period { text-align:right; color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .rail { position:relative; display:flex; justify-content:center; }
+    #seo-growth-dashboard-v2 .rail::after { content:""; position:absolute; top:16px; bottom:0; width:1px; background:var(--border); }
+    #seo-growth-dashboard-v2 .phase:last-child .rail::after { display:none; }
+    #seo-growth-dashboard-v2 .node { position:relative; z-index:1; width:13px; height:13px; border-radius:50%; background:var(--viz-series-1); box-shadow:0 0 0 4px var(--background); }
+    #seo-growth-dashboard-v2 .phase-title { font-weight:500; margin-bottom:4px; }
+    #seo-growth-dashboard-v2 .phase-copy, #seo-growth-dashboard-v2 .phase-kpi { color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .phase-kpi { margin-top:7px; }
+    #seo-growth-dashboard-v2 .seo-toolbar { display:flex; align-items:end; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+    #seo-growth-dashboard-v2 .seo-toolbar .viz-controls { flex:1 1 420px; }
+    #seo-growth-dashboard-v2 .section-meta-actions { display:flex; align-items:center; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+    #seo-growth-dashboard-v2 .report-scope-toggle { align-self:end; min-height:38px; padding:0 15px; border:1px solid rgba(82,48,135,.26); border-radius:999px; color:#533087; background:#f4f0fa; box-shadow:0 1px 2px rgba(58,31,100,.06); font-weight:650; letter-spacing:.01em; transition:background .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease; }
+    #seo-growth-dashboard-v2 .report-scope-toggle::before { content:'◌'; margin-right:7px; font-size:14px; line-height:1; }
+    #seo-growth-dashboard-v2 .report-scope-toggle:hover { border-color:#533087; background:#ede5f8; box-shadow:0 3px 9px rgba(58,31,100,.13); }
+    #seo-growth-dashboard-v2 .report-scope-toggle.is-active { color:#fff; border-color:#533087; background:#533087; box-shadow:0 3px 10px rgba(58,31,100,.22); }
+    #seo-growth-dashboard-v2 .report-scope-toggle.is-active::before { content:'✓'; }
+    #seo-growth-dashboard-v2 .report-scope-toggle:disabled,
+    #seo-growth-dashboard-v2 .report-scope-toggle.is-disabled { color:#a1a1a6; border-color:#d2d2d7; background:#f2f2f4; box-shadow:none; cursor:not-allowed; }
+    #seo-growth-dashboard-v2 .report-scope-toggle:disabled::before,
+    #seo-growth-dashboard-v2 .report-scope-toggle.is-disabled::before { content:'—'; }
+    #seo-growth-dashboard-v2 .report-scope-toggle:disabled:hover,
+    #seo-growth-dashboard-v2 .report-scope-toggle.is-disabled:hover { border-color:#d2d2d7; background:#f2f2f4; box-shadow:none; }
+    #seo-growth-dashboard-v2 .seo-subtabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; }
+    #seo-growth-dashboard-v2 .seo-inline-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; padding:12px 0; margin-bottom:20px; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+    #seo-growth-dashboard-v2 .seo-inline-value { font-weight:500; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .seo-inline-label { color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .seo-month-row { display:grid; grid-template-columns:74px repeat(5,minmax(0,1fr)); gap:8px; align-items:center; padding:10px 4px; border-bottom:1px solid var(--border); }
+    #seo-growth-dashboard-v2 .seo-month-row.header { color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .seo-month-row > :not(:first-child) { text-align:right; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .seo-quality-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:16px 0 22px; }
+    #seo-growth-dashboard-v2 .seo-quality-item { padding-top:8px; border-top:2px solid var(--border); }
+    #seo-growth-dashboard-v2 .seo-quality-item.organic { border-top-color:var(--viz-series-1); }
+    #seo-growth-dashboard-v2 .seo-quality-value { font-weight:500; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .seo-quality-note { color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .seo-recommendations { margin:0; padding:0; list-style:none; display:grid; gap:12px; }
+    #seo-growth-dashboard-v2 .seo-recommendations li { display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:start; }
+    #seo-growth-dashboard-v2 .seo-table { display:grid; }
+    #seo-growth-dashboard-v2 .seo-data-row { display:grid; grid-template-columns:minmax(180px,1.6fr) repeat(4,minmax(58px,.55fr)) auto; gap:10px; align-items:center; padding:11px 4px; border-bottom:1px solid var(--border); }
+    #seo-growth-dashboard-v2 .seo-data-row.market-keyword { grid-template-columns:minmax(180px,1.6fr) repeat(7,minmax(58px,.55fr)) auto; }
+    #seo-growth-dashboard-v2 .seo-data-row.header { color:var(--muted-foreground); padding-top:2px; }
+    #seo-growth-dashboard-v2 .seo-data-row > :not(:first-child) { text-align:right; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .seo-name { min-width:0; overflow-wrap:anywhere; }
+    #seo-growth-dashboard-v2 .seo-movement { white-space:nowrap; }
+    #seo-growth-dashboard-v2 .seo-empty { padding:24px 4px; color:var(--muted-foreground); text-align:center; }
+    #seo-growth-dashboard-v2 .seo-detail { margin-top:18px; }
+    #seo-growth-dashboard-v2 .seo-detail[hidden], #seo-growth-dashboard-v2 [data-seo-panel][hidden] { display:none; }
+    #seo-growth-dashboard-v2 .seo-detail-title { font-weight:500; overflow-wrap:anywhere; }
+    #seo-growth-dashboard-v2 .seo-detail-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:12px; }
+    #seo-growth-dashboard-v2 .seo-detail-cell { padding-top:8px; border-top:1px solid var(--border); }
+    #seo-growth-dashboard-v2 .seo-serp-results { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:14px; }
+    #seo-growth-dashboard-v2 .seo-serp-result { display:grid; align-content:start; gap:6px; min-height:118px; padding:14px; border:1px solid var(--border); border-radius:8px; color:var(--foreground); background:var(--card); text-decoration:none; }
+    #seo-growth-dashboard-v2 .seo-serp-result:hover { border-color:#b9a4df; background:#faf8fd; }
+    #seo-growth-dashboard-v2 .seo-serp-result:focus-visible { outline:3px solid #b9a4df; outline-offset:2px; }
+    #seo-growth-dashboard-v2 .seo-serp-rank { color:var(--primary); font-size:var(--text-sm); font-weight:700; }
+    #seo-growth-dashboard-v2 .seo-serp-domain { font-weight:600; overflow-wrap:anywhere; }
+    #seo-growth-dashboard-v2 .seo-serp-title { color:var(--muted-foreground); font-size:var(--text-sm); line-height:1.4; overflow-wrap:anywhere; }
+    #seo-growth-dashboard-v2 .seo-channel-row { display:grid; grid-template-columns:112px minmax(90px,1fr) 58px 150px; gap:10px; align-items:center; padding:9px 0; }
+    #seo-growth-dashboard-v2 .seo-channel-track { height:18px; border-radius:var(--radius-md); background:var(--muted); overflow:hidden; }
+    #seo-growth-dashboard-v2 .seo-channel-fill { height:100%; min-width:4px; border-radius:inherit; background:var(--viz-series-1); }
+    #seo-growth-dashboard-v2 .seo-channel-meta { color:var(--muted-foreground); text-align:right; white-space:nowrap; }
+    #seo-growth-dashboard-v2 .tooltip { position:absolute; opacity:0; pointer-events:none; transform:translate(-50%,-100%); }
+    @media (max-width:620px) {
+      #seo-growth-dashboard-v2 .overview-grid { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .funnel-row { grid-template-columns:76px 1fr 64px; gap:8px; }
+      #seo-growth-dashboard-v2 .conversion-path { margin-left:84px; }
+      #seo-growth-dashboard-v2 .page-row { grid-template-columns:1fr auto; gap:6px 12px; padding:14px 4px; }
+      #seo-growth-dashboard-v2 .page-row.header { display:none; }
+      #seo-growth-dashboard-v2 .page-row > :nth-child(2)::before { content:"点击 "; color:var(--muted-foreground); }
+      #seo-growth-dashboard-v2 .page-row > :nth-child(3)::before { content:"展示 "; color:var(--muted-foreground); }
+      #seo-growth-dashboard-v2 .page-row > :nth-child(4)::before { content:"CTR "; color:var(--muted-foreground); }
+      #seo-growth-dashboard-v2 .page-row > :nth-child(5)::before { content:"排名 "; color:var(--muted-foreground); }
+      #seo-growth-dashboard-v2 .page-row > :nth-child(6) { grid-column:1/-1; }
+      #seo-growth-dashboard-v2 .page-row .num { text-align:right; }
+      #seo-growth-dashboard-v2 .phase { grid-template-columns:58px 20px 1fr; gap:8px; }
+      #seo-growth-dashboard-v2 .hrow { grid-template-columns:72px minmax(76px,1fr) 52px; gap:8px; }
+      #seo-growth-dashboard-v2 .hsecondary { grid-column:2/-1; text-align:left; margin-top:-6px; }
+      #seo-growth-dashboard-v2 .seo-inline-metrics, #seo-growth-dashboard-v2 .seo-quality-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      #seo-growth-dashboard-v2 .seo-month-row { grid-template-columns:64px repeat(2,minmax(0,1fr)); }
+      #seo-growth-dashboard-v2 .seo-month-row > :nth-child(4), #seo-growth-dashboard-v2 .seo-month-row > :nth-child(5), #seo-growth-dashboard-v2 .seo-month-row > :nth-child(6) { display:none; }
+      #seo-growth-dashboard-v2 .seo-data-row { grid-template-columns:minmax(0,1fr) repeat(2,58px) auto; gap:7px; }
+      #seo-growth-dashboard-v2 .seo-data-row > :nth-child(4), #seo-growth-dashboard-v2 .seo-data-row > :nth-child(5) { display:none; }
+      #seo-growth-dashboard-v2 .seo-channel-row { grid-template-columns:90px minmax(70px,1fr) 52px; }
+      #seo-growth-dashboard-v2 .seo-channel-meta { grid-column:2/-1; text-align:left; margin-top:-5px; }
+      #seo-growth-dashboard-v2 .seo-serp-results { grid-template-columns:1fr; }
+    }
+    @media (max-width:420px) {
+      #seo-growth-dashboard-v2 .topline { display:block; }
+      #seo-growth-dashboard-v2 .period { text-align:left; margin-top:4px; }
+      #seo-growth-dashboard-v2 .tabs .btn { flex:1 1 30%; }
+      #seo-growth-dashboard-v2 .section-head { display:block; }
+      #seo-growth-dashboard-v2 .section-note { text-align:left; margin-top:2px; }
+      #seo-growth-dashboard-v2 .seo-detail-grid { grid-template-columns:1fr; }
+    }
+
+    /* Apple-inspired editorial system: quiet surfaces, typography, and space. */
+    html {
+      color-scheme:light !important;
+      background:#f5f5f7 !important;
+      --background:#f5f5f7;
+      --foreground:#1d1d1f;
+      --card:transparent;
+      --card-foreground:#1d1d1f;
+      --popover:#fbfbfd;
+      --popover-foreground:#1d1d1f;
+      --primary:#0b4f6c;
+      --primary-foreground:#fbfbfd;
+      --secondary:#ececef;
+      --secondary-foreground:#1d1d1f;
+      --muted:#e8e8ed;
+      --muted-foreground:#86868b;
+      --accent:#e6eef2;
+      --accent-foreground:#0b4f6c;
+      --border:#d2d2d7;
+      --input:#c7c7cc;
+      --ring:#0b4f6c;
+      --viz-series-1:#0b4f6c;
+      --viz-series-2:#53535a;
+      --viz-series-3:#8a8a91;
+      --viz-series-4:#6e6e73;
+      --viz-series-5:#a1a1a6;
+      --viz-series-6:#3a3a3c;
+    }
+    html > body { background:#f5f5f7 !important; color:#1d1d1f !important; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif; font-weight:400; }
+    #seo-growth-dashboard-v2 { padding:42px 30px 76px; color:#1d1d1f; background:#f5f5f7; }
+    #seo-growth-dashboard-v2 .topline { margin-bottom:46px; align-items:end; }
+    #seo-growth-dashboard-v2 .eyebrow { color:#86868b; letter-spacing:.04em; text-transform:uppercase; }
+    #seo-growth-dashboard-v2 .client { margin-top:8px; font-size:clamp(28px,5vw,42px); font-weight:600; letter-spacing:-.035em; line-height:1.05; }
+    #seo-growth-dashboard-v2 .period { color:#86868b; font-weight:400; line-height:1.55; }
+    #seo-growth-dashboard-v2 .tabs { gap:24px; margin-bottom:58px; padding-bottom:0; border-bottom:1px solid #d2d2d7; }
+    #seo-growth-dashboard-v2 .tabs .btn,
+    #seo-growth-dashboard-v2 .seo-subtabs .btn { min-height:0; padding:0 0 13px; border:0; border-radius:0; color:#86868b; background:transparent; box-shadow:none; font-weight:400; }
+    #seo-growth-dashboard-v2 .tabs .btn-primary,
+    #seo-growth-dashboard-v2 .seo-subtabs .btn-primary { color:#1d1d1f; background:transparent; box-shadow:inset 0 -2px 0 #0b4f6c; font-weight:500; }
+    #seo-growth-dashboard-v2 .panel { padding-bottom:68px; }
+    #seo-growth-dashboard-v2 .card { padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+    #seo-growth-dashboard-v2 .viz-grid.metrics { grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:0; margin:0 0 62px; }
+    #seo-growth-dashboard-v2 .metrics .viz-stat { min-height:112px; padding:2px 24px 0; border-right:1px solid #d2d2d7; }
+    #seo-growth-dashboard-v2 .metrics .viz-stat:first-child { padding-left:0; }
+    #seo-growth-dashboard-v2 .metrics .viz-stat:last-child { padding-right:0; border-right:0; }
+    #seo-growth-dashboard-v2 .viz-stat > div:first-child { color:#86868b; font-weight:400; }
+    #seo-growth-dashboard-v2 .viz-stat-value { margin-top:11px; color:#1d1d1f; font-size:clamp(28px,5vw,38px); font-weight:600; letter-spacing:-.035em; line-height:1; }
+    #seo-growth-dashboard-v2 .metric-foot { margin-top:12px; color:#86868b; font-weight:400; }
+    #seo-growth-dashboard-v2 .section-head { margin-bottom:22px; }
+    #seo-growth-dashboard-v2 .section-title { font-size:clamp(19px,3vw,24px); font-weight:600; letter-spacing:-.018em; }
+    #seo-growth-dashboard-v2 .section-note,
+    #seo-growth-dashboard-v2 .text-muted,
+    #seo-growth-dashboard-v2 .priority-copy,
+    #seo-growth-dashboard-v2 .chart-caption,
+    #seo-growth-dashboard-v2 .phase-copy,
+    #seo-growth-dashboard-v2 .phase-kpi { color:#86868b; font-weight:400; }
+    #seo-growth-dashboard-v2 .overview-grid { grid-template-columns:minmax(0,1.5fr) minmax(220px,.7fr); gap:66px; }
+    #seo-growth-dashboard-v2 .track,
+    #seo-growth-dashboard-v2 .htrack,
+    #seo-growth-dashboard-v2 .rank-track,
+    #seo-growth-dashboard-v2 .seo-channel-track { border-radius:3px; background:#e5e5ea; }
+    #seo-growth-dashboard-v2 .fill,
+    #seo-growth-dashboard-v2 .hbar,
+    #seo-growth-dashboard-v2 .seo-channel-fill { border-radius:3px; }
+    #seo-growth-dashboard-v2 .priority { gap:22px; }
+    #seo-growth-dashboard-v2 .priority li { grid-template-columns:24px 1fr; gap:12px; }
+    #seo-growth-dashboard-v2 .rank { width:24px; height:24px; border-radius:4px; color:#0b4f6c; background:transparent; border:1px solid #b7c9d2; }
+    #seo-growth-dashboard-v2 .priority li:not(:first-child) .rank { color:#86868b; background:transparent; border-color:#d2d2d7; }
+    #seo-growth-dashboard-v2 .priority-title,
+    #seo-growth-dashboard-v2 .phase-title,
+    #seo-growth-dashboard-v2 .seo-detail-title { font-weight:600; }
+    #seo-growth-dashboard-v2 .keyword-row,
+    #seo-growth-dashboard-v2 .page-row,
+    #seo-growth-dashboard-v2 .seo-data-row,
+    #seo-growth-dashboard-v2 .seo-month-row { padding-top:16px; padding-bottom:16px; border-color:#d9d9de; }
+    #seo-growth-dashboard-v2 .keyword-axis,
+    #seo-growth-dashboard-v2 .page-row.header,
+    #seo-growth-dashboard-v2 .seo-data-row.header,
+    #seo-growth-dashboard-v2 .seo-month-row.header { color:#86868b; border-color:#c7c7cc; }
+    #seo-growth-dashboard-v2 .seo-toolbar { margin-bottom:28px; }
+    #seo-growth-dashboard-v2 .seo-subtabs { gap:22px; margin-bottom:46px; border-bottom:1px solid #d2d2d7; }
+    #seo-growth-dashboard-v2 .form-label { color:#86868b; font-weight:400; }
+    #seo-growth-dashboard-v2 .form-control,
+    #seo-growth-dashboard-v2 .form-select { min-height:42px; border:1px solid #c7c7cc; border-radius:7px; color:#1d1d1f; background:#fbfbfd; box-shadow:none; }
+    #seo-growth-dashboard-v2 .seo-inline-metrics { gap:28px; padding:20px 0; margin-bottom:58px; border-color:#d2d2d7; }
+    #seo-growth-dashboard-v2 .seo-inline-label,
+    #seo-growth-dashboard-v2 .seo-quality-note,
+    #seo-growth-dashboard-v2 .seo-channel-meta { color:#86868b; }
+    #seo-growth-dashboard-v2 .seo-inline-value,
+    #seo-growth-dashboard-v2 .seo-quality-value { margin-top:7px; font-weight:600; letter-spacing:-.015em; }
+    #seo-growth-dashboard-v2 .seo-quality-grid { gap:28px; margin:22px 0 62px; }
+    #seo-growth-dashboard-v2 .seo-quality-item { padding-top:13px; border-top:1px solid #d2d2d7; }
+    #seo-growth-dashboard-v2 .seo-quality-item.organic { border-top-color:#0b4f6c; }
+    #seo-growth-dashboard-v2 .seo-recommendations { gap:0; }
+    #seo-growth-dashboard-v2 .seo-recommendations li { padding:19px 0; border-bottom:1px solid #d9d9de; }
+    #seo-growth-dashboard-v2 .viz-badge { padding:0; border:0; border-radius:0; color:#0b4f6c; background:transparent; font-weight:500; letter-spacing:.04em; }
+    #seo-growth-dashboard-v2 .seo-detail.card { margin-top:34px; padding:25px 0 0; border-top:1px solid #b8b8bd; }
+    #seo-growth-dashboard-v2 .seo-detail-cell { padding-top:14px; border-color:#d2d2d7; }
+    #seo-growth-dashboard-v2 .seo-data-row .btn { min-height:0; padding:0; border:0; border-radius:0; color:#0b4f6c; background:transparent; box-shadow:none; }
+    #seo-growth-dashboard-v2 .seo-channel-row { padding:14px 0; border-bottom:1px solid #d9d9de; }
+    #seo-growth-dashboard-v2 .timeline { max-width:none; }
+    #seo-growth-dashboard-v2 .phase { min-height:144px; grid-template-columns:76px 20px 1fr; gap:18px; }
+    #seo-growth-dashboard-v2 .node { width:9px; height:9px; border-radius:2px; background:#0b4f6c; box-shadow:0 0 0 5px #f5f5f7; }
+    #seo-growth-dashboard-v2 .rail::after { top:14px; background:#c7c7cc; }
+    #seo-growth-dashboard-v2 .tooltip { border:1px solid #d2d2d7; border-radius:6px; color:#1d1d1f; background:#fbfbfd; box-shadow:0 18px 55px rgb(29 29 31 / 8%); }
+    @media (max-width:620px) {
+      #seo-growth-dashboard-v2 { padding:30px 20px 58px; }
+      #seo-growth-dashboard-v2 .topline { margin-bottom:34px; }
+      #seo-growth-dashboard-v2 .tabs { gap:18px; margin-bottom:44px; }
+      #seo-growth-dashboard-v2 .overview-grid { grid-template-columns:1fr; gap:52px; }
+      #seo-growth-dashboard-v2 .metrics .viz-stat { min-height:100px; padding:18px 16px; border-right:0; border-bottom:1px solid #d2d2d7; }
+      #seo-growth-dashboard-v2 .metrics .viz-stat:first-child { padding-left:16px; }
+      #seo-growth-dashboard-v2 .metrics .viz-stat:last-child { border-bottom:0; }
+      #seo-growth-dashboard-v2 .viz-grid.metrics { grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:46px; }
+      #seo-growth-dashboard-v2 .seo-inline-metrics { gap:18px; }
+    }
+    @media (max-width:420px) {
+      #seo-growth-dashboard-v2 .viz-grid.metrics { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .tabs .btn { flex:0 0 auto; }
+    }
+
+    /* Single-page, full-width presentation. */
+    html > body { width:100%; padding:0 !important; }
+    #widget { width:100%; max-width:none !important; }
+    #seo-growth-dashboard-v2 { width:100%; max-width:none; padding:54px clamp(28px,5vw,88px) 100px; }
+    #seo-growth-dashboard-v2 .tabs,
+    #seo-growth-dashboard-v2 .seo-subtabs { display:none !important; }
+    #seo-growth-dashboard-v2 .panel[hidden],
+    #seo-growth-dashboard-v2 [data-seo-panel][hidden] { display:block !important; }
+    #seo-growth-dashboard-v2 .panel { margin-top:76px; padding:58px 0 88px; border-top:1px solid #c7c7cc; }
+    #seo-growth-dashboard-v2 .panel[data-panel="overview"] { margin-top:0; }
+    #seo-growth-dashboard-v2 .apple-section-heading { display:grid; grid-template-columns:44px minmax(0,1fr); gap:18px; align-items:start; margin-bottom:56px; }
+    #seo-growth-dashboard-v2 .apple-section-heading h2 { margin:0; color:#1d1d1f; font-size:clamp(26px,3vw,42px); font-weight:600; letter-spacing:-.035em; line-height:1.08; }
+    #seo-growth-dashboard-v2 .apple-section-heading p { margin:10px 0 0; color:#86868b; font-weight:400; }
+    #seo-growth-dashboard-v2 .apple-section-index { padding-top:5px; color:#0b4f6c; font-weight:500; letter-spacing:.06em; }
+    #seo-growth-dashboard-v2 .viz-grid.metrics { grid-template-columns:repeat(4,minmax(150px,1fr)); }
+    #seo-growth-dashboard-v2 .overview-grid { grid-template-columns:minmax(0,1.8fr) minmax(280px,.7fr); gap:clamp(54px,7vw,120px); }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] { display:grid !important; grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr); column-gap:clamp(48px,6vw,100px); align-items:start; margin-bottom:88px; }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] > :nth-child(1) { grid-column:1; grid-row:1; }
+    #seo-growth-dashboard-v2 #google-seo-months { grid-column:1; grid-row:2; }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] > :nth-child(3) { grid-column:2; grid-row:1; margin-top:0 !important; }
+    #seo-growth-dashboard-v2 #google-seo-quality { grid-column:2; grid-row:2; grid-template-columns:repeat(2,minmax(0,1fr)); margin-top:0; }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] > :nth-child(5) { grid-column:1/-1; grid-row:3; margin-top:72px; }
+    #seo-growth-dashboard-v2 #google-seo-recommendations { grid-column:1/-1; grid-row:4; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:48px; }
+    #seo-growth-dashboard-v2 .seo-deep-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:clamp(54px,6vw,96px); align-items:start; }
+    #seo-growth-dashboard-v2 .seo-deep-grid > section { padding-top:46px; border-top:1px solid #c7c7cc; }
+    #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="seo-channels"] { grid-column:1/-1; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:clamp(54px,6vw,100px); }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="search"],
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="pages"] { grid-column:1/-1; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid .panel { min-width:0; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid .chart { min-height:0; }
+    #seo-growth-dashboard-v2 [data-panel="plan"] .timeline { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(36px,5vw,80px); }
+    #seo-growth-dashboard-v2 [data-panel="plan"] .phase { display:block; min-height:0; padding-top:18px; border-top:1px solid #c7c7cc; }
+    #seo-growth-dashboard-v2 [data-panel="plan"] .phase-period { margin-bottom:20px; text-align:left; }
+    #seo-growth-dashboard-v2 [data-panel="plan"] .rail { display:none; }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"],
+      #seo-growth-dashboard-v2 .seo-deep-grid { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > *,
+      #seo-growth-dashboard-v2 #google-seo-months,
+      #seo-growth-dashboard-v2 #google-seo-quality,
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > :nth-child(5),
+      #seo-growth-dashboard-v2 #google-seo-recommendations { grid-column:1; grid-row:auto; }
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > :nth-child(3),
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > :nth-child(5) { margin-top:62px !important; }
+      #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="seo-channels"] { grid-column:1; }
+      #seo-growth-dashboard-v2 .wide-analysis-grid { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .wide-analysis-grid > * { grid-column:1 !important; }
+    }
+    @media (max-width:760px) {
+      #seo-growth-dashboard-v2 { padding:34px 20px 72px; }
+      #seo-growth-dashboard-v2 .panel { margin-top:46px; padding:42px 0 58px; }
+      #seo-growth-dashboard-v2 .apple-section-heading { grid-template-columns:34px minmax(0,1fr); gap:10px; margin-bottom:38px; }
+      #seo-growth-dashboard-v2 .viz-grid.metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      #seo-growth-dashboard-v2 .overview-grid { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 #google-seo-recommendations { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 [data-panel="plan"] .timeline { grid-template-columns:1fr; }
+    }
+    @media (max-width:440px) {
+      #seo-growth-dashboard-v2 .viz-grid.metrics { grid-template-columns:1fr; }
+    }
+
+    /* Blue-violet executive dashboard, based on the supplied reference. */
+    html,
+    html > body { background:#f2f4fb !important; }
+    html > body {
+      background-image:
+        radial-gradient(circle at 12% 9%, rgb(79 107 237 / 12%), transparent 31%),
+        radial-gradient(circle at 91% 22%, rgb(139 92 246 / 11%), transparent 34%) !important;
+      background-attachment:fixed !important;
+    }
+    html {
+      --background:#f2f4fb;
+      --foreground:#20243a;
+      --card:#fbfbff;
+      --card-foreground:#20243a;
+      --popover:#fbfbff;
+      --popover-foreground:#20243a;
+      --primary:#4f6bed;
+      --primary-foreground:#ffffff;
+      --secondary:#eef0fb;
+      --secondary-foreground:#20243a;
+      --muted:#e9ecf7;
+      --muted-foreground:#747990;
+      --accent:#ede9fe;
+      --accent-foreground:#6947c7;
+      --border:#dfe3f0;
+      --input:#d7dceb;
+      --ring:#4f6bed;
+      --viz-series-1:#4f6bed;
+      --viz-series-2:#8b5cf6;
+      --viz-series-3:#7386ee;
+      --viz-series-4:#a78bfa;
+      --viz-series-5:#5564c8;
+      --viz-series-6:#6d56b8;
+    }
+    #seo-growth-dashboard-v2 { padding:24px clamp(22px,3vw,52px) 80px; color:#20243a; background:transparent; }
+    #seo-growth-dashboard-v2 .dashboard-hero { position:relative; display:flex; justify-content:space-between; align-items:flex-end; gap:34px; min-height:240px; padding:44px 42px 38px; overflow:hidden; border-radius:26px; color:#fff; background:linear-gradient(120deg,#172b68 0%,#3f4fa9 54%,#7449b7 100%); box-shadow:0 22px 65px rgb(53 55 120 / 18%); }
+    #seo-growth-dashboard-v2 .dashboard-hero::before,
+    #seo-growth-dashboard-v2 .dashboard-hero::after { content:""; position:absolute; border:36px solid rgb(255 255 255 / 7%); border-radius:50%; pointer-events:none; }
+    #seo-growth-dashboard-v2 .dashboard-hero::before { width:250px; height:250px; right:-65px; top:-115px; }
+    #seo-growth-dashboard-v2 .dashboard-hero::after { width:370px; height:370px; right:-180px; top:-185px; border-width:24px; }
+    #seo-growth-dashboard-v2 .hero-content { position:relative; z-index:1; max-width:850px; }
+    #seo-growth-dashboard-v2 .hero-eyebrow { margin-bottom:14px; font-size:12px; font-weight:600; letter-spacing:.16em; opacity:.78; }
+    #seo-growth-dashboard-v2 .dashboard-hero h1 { margin:0; color:#fff; font-size:clamp(34px,4vw,58px); font-weight:700; letter-spacing:-.04em; line-height:1.05; }
+    #seo-growth-dashboard-v2 .dashboard-hero p { max-width:760px; margin:16px 0 0; color:rgb(255 255 255 / 78%); font-size:16px; }
+    #seo-growth-dashboard-v2 .hero-meta { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; }
+    #seo-growth-dashboard-v2 .hero-meta span { padding:7px 12px; border:1px solid rgb(255 255 255 / 16%); border-radius:8px; color:rgb(255 255 255 / 88%); background:rgb(255 255 255 / 9%); font-size:12px; }
+    #seo-growth-dashboard-v2 .hero-source { position:relative; z-index:1; display:flex; flex-direction:column; align-items:flex-end; min-width:130px; color:#fff; }
+    #seo-growth-dashboard-v2 .hero-source strong { font-size:18px; }
+    #seo-growth-dashboard-v2 .hero-source span { margin-top:4px; font-size:12px; opacity:.7; }
+    #seo-growth-dashboard-v2 .dashboard-filter-bar { margin:22px 0; padding:22px 24px; border:1px solid rgb(255 255 255 / 70%); border-radius:18px; background:rgb(251 251 255 / 88%); box-shadow:0 14px 38px rgb(68 74 140 / 9%); backdrop-filter:blur(16px); }
+    #seo-growth-dashboard-v2 .seo-toolbar { margin:0; }
+    #seo-growth-dashboard-v2 .seo-toolbar .viz-controls { display:grid; grid-template-columns:minmax(180px,.7fr) minmax(280px,1.3fr); gap:16px; max-width:760px; }
+    #seo-growth-dashboard-v2 .form-label { color:#646a82; font-size:12px; font-weight:600; }
+    #seo-growth-dashboard-v2 .form-control,
+    #seo-growth-dashboard-v2 .form-select { min-height:46px; margin-top:7px; border:1px solid #dfe3ef; border-radius:10px; color:#20243a; background:#fff; }
+    #seo-growth-dashboard-v2 .filter-source { display:flex; flex-direction:column; align-items:flex-end; gap:4px; color:#747990; font-size:12px; }
+    #seo-growth-dashboard-v2 .filter-source strong { color:#343a58; font-weight:600; }
+    #seo-growth-dashboard-v2 .executive-brief { display:grid; grid-template-columns:56px 1fr; gap:20px; align-items:center; margin:22px 0 36px; padding:27px 30px; border:1px solid #e4e7f2; border-radius:20px; background:#fbfbff; box-shadow:0 14px 40px rgb(68 74 140 / 8%); }
+    #seo-growth-dashboard-v2 .brief-number { display:grid; place-items:center; width:54px; height:54px; border-radius:14px; color:#4f6bed; background:#edf0ff; font-size:18px; font-weight:700; }
+    #seo-growth-dashboard-v2 .executive-brief h2 { margin:0 0 8px; color:#20243a; font-size:20px; font-weight:700; }
+    #seo-growth-dashboard-v2 .executive-brief p { margin:0; color:#62687f; font-size:15px; }
+    #seo-growth-dashboard-v2 .summary-blue { color:#4f6bed; }
+    #seo-growth-dashboard-v2 .summary-purple { color:#8b5cf6; }
+    #seo-growth-dashboard-v2 .panel { margin-top:32px; padding:34px 0 42px; border:0; }
+    #seo-growth-dashboard-v2 .panel[data-panel="overview"] { margin-top:0; }
+    #seo-growth-dashboard-v2 .apple-section-heading { grid-template-columns:42px 1fr; margin-bottom:28px; }
+    #seo-growth-dashboard-v2 .apple-section-heading h2 { color:#20243a; font-size:clamp(24px,2.4vw,34px); font-weight:700; }
+    #seo-growth-dashboard-v2 .apple-section-heading p { margin-top:6px; color:#747990; }
+    #seo-growth-dashboard-v2 .apple-section-index { display:grid; place-items:center; width:40px; height:40px; padding:0; border-radius:11px; color:#4f6bed; background:#edf0ff; font-weight:700; }
+    #seo-growth-dashboard-v2 .viz-grid.metrics { gap:16px; margin-bottom:30px; }
+    #seo-growth-dashboard-v2 .metrics .viz-stat { min-height:150px; padding:25px 24px; border:1px solid #e4e7f2; border-radius:18px; background:#fbfbff; box-shadow:0 12px 32px rgb(68 74 140 / 8%); }
+    #seo-growth-dashboard-v2 .metrics .viz-stat:first-child { padding-left:24px; }
+    #seo-growth-dashboard-v2 .metrics .viz-stat:last-child { padding-right:24px; border-right:1px solid #e4e7f2; }
+    #seo-growth-dashboard-v2 .viz-stat > div:first-child { color:#747990; font-size:12px; font-weight:600; }
+    #seo-growth-dashboard-v2 .viz-stat-value { margin-top:18px; color:#20243a; font-size:clamp(30px,3vw,42px); font-weight:700; }
+    #seo-growth-dashboard-v2 .metric-foot { color:#606780; }
+    #seo-growth-dashboard-v2 .overview-grid { gap:20px; }
+    #seo-growth-dashboard-v2 .overview-grid > div { padding:28px; border:1px solid #e4e7f2; border-radius:20px; background:#fbfbff; box-shadow:0 12px 34px rgb(68 74 140 / 7%); }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] { display:block !important; margin-bottom:30px; }
+    #seo-growth-dashboard-v2 .dashboard-chart-grid { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(340px,.8fr); gap:20px; margin-bottom:24px; }
+    #seo-growth-dashboard-v2 .analytics-card { min-width:0; padding:27px 28px; border:1px solid #e4e7f2; border-radius:20px; background:#fbfbff; box-shadow:0 12px 34px rgb(68 74 140 / 8%); }
+    #seo-growth-dashboard-v2 .chart-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:18px; }
+    #seo-growth-dashboard-v2 .chart-card-head h3 { margin:0; color:#20243a; font-size:18px; font-weight:700; }
+    #seo-growth-dashboard-v2 .chart-card-head p { margin:5px 0 0; color:#858aa0; font-size:12px; }
+    #seo-growth-dashboard-v2 .chart-card-head > span { padding:5px 9px; border-radius:7px; color:#6d4bd1; background:#f0ebff; font-size:11px; font-weight:600; }
+    #seo-growth-dashboard-v2 #google-seo-trend-chart svg { display:block; width:100%; height:auto; }
+    #seo-growth-dashboard-v2 .trend-grid { stroke:#e5e8f2; stroke-width:1; }
+    #seo-growth-dashboard-v2 .trend-axis { fill:#747990; font-size:12px; }
+    #seo-growth-dashboard-v2 .trend-value { fill:#343a58; font-size:12px; font-weight:600; }
+    #seo-growth-dashboard-v2 .trend-click { fill:#7a51de; font-size:11px; font-weight:600; }
+    #seo-growth-dashboard-v2 .source-row { display:grid; grid-template-columns:105px minmax(90px,1fr) 46px; gap:12px; align-items:center; padding:11px 0; color:#4d536c; }
+    #seo-growth-dashboard-v2 .source-track { height:16px; overflow:hidden; border-radius:6px; background:#eceef6; }
+    #seo-growth-dashboard-v2 .source-track span { display:block; height:100%; border-radius:6px; background:linear-gradient(90deg,#4f6bed,#8b5cf6); }
+    #seo-growth-dashboard-v2 .source-row strong { text-align:right; color:#343a58; }
+    #seo-growth-dashboard-v2 #google-seo-months,
+    #seo-growth-dashboard-v2 #google-seo-recommendations { padding:22px 24px; border:1px solid #e4e7f2; border-radius:18px; background:#fbfbff; box-shadow:0 10px 30px rgb(68 74 140 / 6%); }
+    #seo-growth-dashboard-v2 .seo-quality-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:20px 0 34px; }
+    #seo-growth-dashboard-v2 .seo-quality-item { min-height:112px; padding:20px; border:1px solid #e3e6f2; border-radius:16px; background:#f8f9fe; }
+    #seo-growth-dashboard-v2 .seo-quality-item.organic { border-top:3px solid #8b5cf6; }
+    #seo-growth-dashboard-v2 .seo-inline-metrics { gap:14px; padding:0; border:0; }
+    #seo-growth-dashboard-v2 .seo-inline-metrics > div { padding:18px 20px; border:1px solid #e4e7f2; border-radius:14px; background:#f8f9fe; }
+    #seo-growth-dashboard-v2 .seo-deep-grid { gap:20px; }
+    #seo-growth-dashboard-v2 .seo-deep-grid > section { padding:28px; border:1px solid #e4e7f2; border-radius:20px; background:#fbfbff; box-shadow:0 12px 34px rgb(68 74 140 / 7%); }
+    #seo-growth-dashboard-v2 .wide-analysis-grid { gap:20px; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid .panel,
+    #seo-growth-dashboard-v2 [data-panel="plan"] { padding:30px; border:1px solid #e4e7f2; border-radius:22px; background:#fbfbff; box-shadow:0 12px 34px rgb(68 74 140 / 7%); }
+    #seo-growth-dashboard-v2 .wide-analysis-grid .apple-section-heading,
+    #seo-growth-dashboard-v2 [data-panel="plan"] .apple-section-heading { margin-bottom:30px; }
+    #seo-growth-dashboard-v2 .track,
+    #seo-growth-dashboard-v2 .htrack,
+    #seo-growth-dashboard-v2 .rank-track,
+    #seo-growth-dashboard-v2 .seo-channel-track { background:#e9ecf6; }
+    #seo-growth-dashboard-v2 .fill,
+    #seo-growth-dashboard-v2 .hbar,
+    #seo-growth-dashboard-v2 .seo-channel-fill { background:#4f6bed; }
+    #seo-growth-dashboard-v2 .fill.click { background:#8b5cf6; }
+    #seo-growth-dashboard-v2 .fill.event { background:#6c7fe8; }
+    #seo-growth-dashboard-v2 .rank { color:#4f6bed; border-color:#cfd5f2; background:#f0f2ff; }
+    #seo-growth-dashboard-v2 .viz-badge { padding:5px 8px; border-radius:7px; color:#6544c1; background:#f0ebff; }
+    #seo-growth-dashboard-v2 .keyword-row,
+    #seo-growth-dashboard-v2 .page-row,
+    #seo-growth-dashboard-v2 .seo-data-row,
+    #seo-growth-dashboard-v2 .seo-month-row,
+    #seo-growth-dashboard-v2 .seo-channel-row { border-color:#e5e8f2; }
+    #seo-growth-dashboard-v2 .seo-data-row .btn { color:#4f6bed; }
+    #seo-growth-dashboard-v2 .phase { padding:22px; border:1px solid #e4e7f2 !important; border-radius:16px; background:#f8f9fe; }
+    #seo-growth-dashboard-v2 .tooltip { border-color:#dfe3f0; color:#20243a; background:#fff; box-shadow:0 18px 55px rgb(68 74 140 / 16%); }
+    @media (max-width:1050px) {
+      #seo-growth-dashboard-v2 .dashboard-chart-grid { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .seo-quality-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width:720px) {
+      #seo-growth-dashboard-v2 { padding:14px 14px 58px; }
+      #seo-growth-dashboard-v2 .dashboard-hero { min-height:0; padding:32px 25px; border-radius:20px; }
+      #seo-growth-dashboard-v2 .hero-source { display:none; }
+      #seo-growth-dashboard-v2 .dashboard-filter-bar { padding:18px; }
+      #seo-growth-dashboard-v2 .seo-toolbar .viz-controls { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .section-meta-actions { justify-content:space-between; margin-top:10px; }
+      #seo-growth-dashboard-v2 .filter-source { align-items:flex-start; margin-top:14px; }
+      #seo-growth-dashboard-v2 .executive-brief { grid-template-columns:44px 1fr; padding:22px; }
+      #seo-growth-dashboard-v2 .brief-number { width:42px; height:42px; }
+      #seo-growth-dashboard-v2 .metrics .viz-stat { min-height:130px; }
+      #seo-growth-dashboard-v2 .seo-quality-grid { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .analytics-card,
+      #seo-growth-dashboard-v2 .seo-deep-grid > section,
+      #seo-growth-dashboard-v2 .wide-analysis-grid .panel,
+      #seo-growth-dashboard-v2 [data-panel="plan"] { padding:22px; }
+    }
+  </style>
+
+  <header class="dashboard-topbar">
+    <div class="topbar-brand">
+      <h1>Google SEO 数据增长看板</h1>
+      <p>example.com</p>
+    </div>
+    <div class="dashboard-filter-bar">
+      <div class="seo-toolbar">
+        <div class="viz-controls">
+          <label class="form-label" for="google-seo-month">数据月份
+            <select class="form-select" id="google-seo-month"></select>
+          </label>
+          <label class="form-label" for="google-seo-filter">搜索关键词或页面
+            <input class="form-control" id="google-seo-filter" type="search" placeholder="输入关键词或 URL 路径">
+          </label>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="分析维度">
+    <button class="btn btn-primary" type="button" data-view="overview" aria-pressed="true">总览</button>
+    <button class="btn" type="button" data-view="google-seo" aria-pressed="false">Google SEO</button>
+    <button class="btn" type="button" data-view="search" aria-pressed="false">搜索机会</button>
+    <button class="btn" type="button" data-view="channels" aria-pressed="false">渠道质量</button>
+    <button class="btn" type="button" data-view="markets" aria-pressed="false">重点市场</button>
+    <button class="btn" type="button" data-view="strategy" data-seo-view="strategy" aria-pressed="false" hidden>策略机会</button>
+    <button class="btn" type="button" data-view="plan" aria-pressed="false">90 天计划</button>
+  </nav>
+
+  <section class="executive-brief">
+    <div><h2>管理摘要</h2><p id="google-seo-executive-summary">正在生成当月增长摘要…</p></div>
+  </section>
+
+  <section class="panel" data-panel="overview">
+    <div class="apple-section-heading"><span class="apple-section-index">02</span><div><h2>增长总览</h2><p>搜索可见度、访问与商业结果</p></div></div>
+    <div class="viz-grid metrics">
+      <div class="card viz-stat"><div class="text-muted">GSC 自然点击</div><div class="metric-value viz-stat-value">26 <span class="metric-tag text-small">次</span></div><div class="metric-foot text-small">Google 搜索自然结果带来的点击</div></div>
+      <div class="card viz-stat"><div class="text-muted">GSC 搜索展示</div><div class="metric-value viz-stat-value">2,060 <span class="metric-tag text-small">次</span></div><div class="metric-foot text-small">Google 搜索结果中的展示次数</div></div>
+      <div class="card viz-stat"><div class="text-muted">GSC 自然点击率</div><div class="metric-value viz-stat-value">1.3%</div><div class="metric-foot text-small">自然点击 ÷ 搜索展示</div></div>
+      <div class="card viz-stat"><div class="text-muted">GSC 平均排名</div><div class="metric-value viz-stat-value">12.6</div><div class="metric-foot text-small">数值越低，搜索位置越靠前</div></div>
+    </div>
+    <div class="overview-grid">
+      <div>
+        <div class="section-head"><div class="section-title">增长漏斗</div><div class="section-note text-small">曝光已建立，询盘追踪是当前断点</div></div>
+        <div class="funnel" role="img" aria-label="2060 次搜索展示带来 26 次自然点击和 2 个关键事件">
+          <div class="funnel-row"><div class="funnel-label">搜索展示</div><div class="track"><div class="fill" style="width:100%"></div></div><div class="funnel-value">2,060</div></div>
+          <div class="funnel-row"><div class="funnel-label">自然点击</div><div class="track"><div class="fill click" style="width:28%"></div></div><div class="funnel-value">26</div></div>
+          <div class="funnel-row"><div class="funnel-label">关键事件</div><div class="track"><div class="fill event" style="width:10%"></div></div><div class="funnel-value">2</div></div>
+        </div>
+        <div class="conversion-path text-small"><span>展示 → 点击</span><strong>1.3%</strong><span>·</span><span>会话关键事件率</span><strong>0.48%</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel report-period-panel" id="report-period-trends" aria-label="报告期趋势与月度变化">
+    <div class="apple-section-heading"><div><h2>报告期趋势</h2><p>2026-03 至 2026-05 · 固定三个月汇总</p></div></div>
+    <div id="report-period-trends-content"></div>
+  </section>
+
+  <div id="report-period-flow" aria-label="报告期流量来源分布"></div>
+
+  <section class="panel" data-panel="google-seo" hidden>
+    <div class="apple-section-heading"><div><h2>按月查看 · Google SEO Intelligence</h2><p>仅本区四项指标、关键词与页面明细随数据月份切换</p><div class="google-seo-source text-small">Google 官方一方表现数据 · GSC / GA4</div></div></div>
+    <nav class="seo-subtabs" aria-label="Google SEO 分析维度">
+      <button class="btn btn-primary" type="button" data-seo-view="summary" aria-pressed="true">核心指标</button>
+      <button class="btn" type="button" data-seo-view="keywords" aria-pressed="false">关键词</button>
+      <button class="btn" type="button" data-seo-view="seo-pages" aria-pressed="false">页面联动</button>
+      <button class="btn" type="button" data-seo-view="seo-channels" aria-pressed="false">流量质量</button>
+    </nav>
+
+    <div class="viz-grid metrics" id="google-seo-kpis"></div>
+
+    <section data-seo-panel="summary">
+      <div class="dashboard-chart-grid">
+        <div class="analytics-card"><div class="chart-card-head"><div><h3>月度搜索增长趋势</h3><p>曝光柱状图 · 点击趋势线</p></div><span>趋势</span></div><div id="google-seo-trend-chart"></div></div>
+        <div class="analytics-card"><div class="chart-card-head"><div><h3>流量来源贡献</h3><p>按会话量从高到低</p></div><span>渠道</span></div><div id="google-seo-source-chart"></div></div>
+      </div>
+      <div class="section-head"><div class="section-title">月度变化</div><div class="section-note text-small" id="google-seo-period"></div></div>
+      <div id="google-seo-months"></div>
+      <div class="section-head" style="margin-top:22px"><div class="section-title">自然搜索用户质量</div><div class="section-meta-actions"><div class="section-note text-small">自然搜索渠道与全站平均对比</div><button class="report-scope-toggle" id="google-seo-report-total-toggle" type="button" data-report-scope="period" aria-pressed="false">查看报告期合计</button></div></div>
+      <div class="seo-quality-grid" id="google-seo-quality"></div>
+    </section>
+
+    <div class="seo-deep-grid">
+    <section data-seo-panel="keywords" hidden>
+      <div class="section-head"><div class="section-title">关键词排名与波动</div><div class="section-note text-small" id="google-seo-keyword-count"></div></div>
+      <div class="seo-table" id="google-seo-keywords"></div>
+      <div class="card seo-detail" id="google-seo-keyword-detail" hidden></div>
+    </section>
+
+    <section data-seo-panel="seo-pages" hidden>
+      <div class="section-head"><div class="section-title">搜索表现 × 页面体验</div><div class="section-note text-small" id="google-seo-page-count"></div></div>
+      <div class="seo-table" id="google-seo-pages"></div>
+      <div class="card seo-detail" id="google-seo-page-detail" hidden></div>
+    </section>
+
+    <section data-seo-panel="seo-channels" hidden>
+      <div class="section-head"><div class="section-title">流量来源分布</div><div class="section-note text-small">报告期三个月汇总</div></div>
+      <div id="google-seo-channels"></div>
+    </section>
+    </div>
+  </section>
+
+  <section class="panel market-validation-panel" data-panel="google-seo" aria-label="市场机会验证" hidden>
+    <section class="market-opportunity-card" id="google-seo-market-opportunities" hidden></section>
+    <div class="card seo-detail market-opportunity-serp-detail" id="google-seo-market-serp-detail" hidden></div>
+  </section>
+
+  <section class="panel strategy-panel" data-panel="strategy" data-seo-panel="strategy" hidden>
+    <div class="strategy-band">
+      <header class="strategy-band-heading">
+        <div><h2>策略机会</h2><p id="strategy-opportunities-meta">第三方策略发现</p></div>
+        <div class="strategy-summary" aria-label="本次 SEOAgent 策略快照范围"><span id="strategy-priority-count">—</span><span id="strategy-competitor-count">—</span><span id="strategy-reference-count">—</span></div>
+      </header>
+      <p class="strategy-disclosure" role="note">SEOAgent 第三方策略快照，不替代 GSC / GA4 / DataForSEO 核心指标；候选竞品尚未确认。</p>
+      <section class="strategy-section strategy-priority"><div class="section-head"><div class="section-title">优先优化主题</div><div class="section-note text-small">可优先落到已有页面</div></div><div id="strategy-priority-list"></div></section>
+      <section class="strategy-section strategy-competitors"><div class="section-head"><div class="section-title">竞品关键词策略</div><div class="section-note text-small">候选竞品的非品牌商业词</div></div><div id="strategy-competitor-list"></div></section>
+      <details class="strategy-reference"><summary><span class="strategy-reference-title">本站外部关键词发现</span><span class="strategy-reference-count text-small">默认收起</span><span class="strategy-reference-toggle" aria-hidden="true"><span class="strategy-reference-open-label">展开</span><span class="strategy-reference-close-label">收起</span><span class="strategy-reference-chevron">▾</span></span></summary><div class="strategy-reference-body"><div class="strategy-reference-note text-small">外部抓取参考，不计入 GSC 排名或核心 KPI。</div><div id="strategy-keyword-list"></div></div></details>
+      <p class="strategy-action-bridge text-small">以下 90 天行动计划优先承接上述主题，并以 GSC / GA4 的后续表现验证。</p>
+    </div>
+  </section>
+
+  <div class="wide-analysis-grid">
+  <section class="panel" data-panel="search" hidden>
+    <div class="apple-section-heading"><span class="apple-section-index">04</span><div><h2>关键词排名</h2><p>重点查询词的自然搜索位置</p></div></div>
+    <div class="section-head"><div class="section-title">关键词 Google 搜索自然平均排名</div><div class="section-note text-small">平均排名数值越小，搜索位置越靠前</div></div>
+    <div class="keyword-summary text-small"><span><strong>10</strong> 个关键词</span><span><strong>3</strong> 个进入首页</span><span><strong>1</strong> 个进入前 3</span></div>
+    <div class="keyword-axis text-small" aria-hidden="true"><div><div>自然平均排名</div><div class="keyword-axis-scale"><span>1</span><span>10</span><span>20</span><span>60</span></div></div><div style="text-align:right">排名</div></div>
+    <div class="keyword-list" role="list" aria-label="关键词 Google 搜索自然平均排名，排名数值越小越好">
+      <div class="keyword-row" role="listitem"><div><div class="keyword-name">sedex audit report</div><div class="rank-track"><span class="rank-dot" style="left:54.6%"></span></div></div><div class="keyword-rank">33.20</div></div>
+      <div class="keyword-row" role="listitem"><div><div class="keyword-name">("defensieluchtvaart" or "defensie-luchtvaart" or "aeronautica" or "luchtvaart") and ("frankrijk" or "franse") and ("sector" or "industrie" or "implicaties" or "gevolgen")</div><div class="rank-track"><span class="rank-dot first-page" style="left:15.25%"></span></div></div><div class="keyword-rank">10.00</div></div>
+      <div class="keyword-row" role="listitem"><div><div class="keyword-name">(unternehmen or korporativ) and (mobilität or mobilitätslösungen) and (sicherheit or compliance)</div><div class="rank-track"><span class="rank-dot" style="left:20.3%"></span></div></div><div class="keyword-rank">13.00</div></div>
+      <div class="keyword-row" role="listitem"><div><div class="keyword-name">(unternehmen or mobilität) and (mobilitätslösungen or sicherheit)</div><div class="rank-track"><span class="rank-dot first-page" style="left:10.2%"></span></div></div><div class="keyword-rank">7.00</div></div>
+      <div class="keyword-row" role="listitem"><div><div class="keyword-name">advanced aluminum cnc facility china</div><div class="rank-track"><span class="rank-dot" style="left:51.2%"></span></div></div><div class="keyword-rank">31.17</div></div>
+      <div class="keyword-row" role="listitem"><div><div class="keyword-name">advanced aluminum cnc machining facility china</div><div class="rank-track"><span class="rank-dot first-page" style="left:.6%"></span></div></div><div class="keyword-rank">1.33</div></div>
+      <div class="keyword-row" role="listitem"><div><div class="keyword-name">aluminium bewerking</div><div class="rank-track"><span class="rank-dot" style="left:94.9%"></span></div></div><div class="keyword-rank">57.00</div></div>
+      <div class="keyword-row" role="listitem"><div><div class="keyword-name">aluminium bewerkingsmogelijkheden</div><div class="rank-track"><span class="rank-dot" style="left:33.9%"></span></div></div><div class="keyword-rank">21.00</div></div>
+      <div class="keyword-row" role="listitem"><div><div class="keyword-name">aluminium componenten machinebouw</div><div class="rank-track"><span class="rank-dot" style="left:40.7%"></span></div></div><div class="keyword-rank">25.00</div></div>
+      <div class="keyword-row" role="listitem"><div><div class="keyword-name">aluminium componenten productie</div><div class="rank-track"><span class="rank-dot" style="left:62.7%"></span></div></div><div class="keyword-rank">38.00</div></div>
+    </div>
+    <div class="chart-caption text-small">其中 “advanced aluminum cnc machining facility china” 平均排名 1.33；排名 10–20 的两个关键词最接近下一阶段增长区间。</div>
+  </section>
+
+  <section class="panel" data-panel="channels" hidden>
+    <div class="apple-section-heading"><span class="apple-section-index">05</span><div><h2>流量获取情况</h2><p>GA4 会话来源的互动与关键事件</p></div></div>
+    <div class="section-head"><div class="section-title">会话来源质量摘要</div><div class="section-note text-small">会话数、每次会话的平均互动时长、关键事件数</div></div>
+    <div id="traffic-acquisition-summary"></div>
+  </section>
+
+  <section class="panel" data-panel="markets" hidden>
+    <div class="apple-section-heading"><span class="apple-section-index">06</span><div><h2>重点市场</h2><p>自然搜索的地区机会</p></div></div>
+    <div class="section-head"><div class="section-title">重点市场自然搜索表现</div><div class="section-note text-small">美国曝光最大，但搜索结果吸引力不足</div></div>
+    <div class="chart" id="market-chart"></div>
+    <div class="chart-caption text-small">优先优化美国市场的英文标题、描述、案例内容与产品落地页。</div>
+  </section>
+
+  </div>
+
+  <section class="panel" data-panel="plan" hidden>
+    <div class="apple-section-heading"><span class="apple-section-index">08</span><div><h2>90 天行动计划</h2><p>从报告期搜索表现与流量质量出发</p></div></div>
+    <div class="timeline" aria-label="90 天增长行动计划">
+      <div class="phase"><div class="phase-period text-small">1–30 天</div><div class="rail"><span class="node"></span></div><div><div class="phase-title">建立自然搜索增长基础</div><div class="phase-copy">梳理网站当前的搜索表现、重点页面收录与内容覆盖，明确已获得搜索曝光的产品、应用场景与采购需求；同步优化标题结构、页面主题分工与内部链接，让首页、产品页和内容页形成清晰的搜索承接路径。</div><div class="phase-kpi text-small">观察：整体自然展示与点击、重点页面收录状态、核心主题的关键词覆盖与平均排名</div></div></div>
+      <div class="phase"><div class="phase-period text-small">31–60 天</div><div class="rail"><span class="node"></span></div><div><div class="phase-title">聚焦高潜力市场与采购需求</div><div class="phase-copy">围绕已有曝光和点击信号的重点市场，完善产品规格、定制能力、MOQ、认证与案例内容；让页面更清楚地回应海外采购商的核心问题，并强化产品页之间的关联路径。</div><div class="phase-kpi text-small">观察：重点市场的展示、点击与目标关键词覆盖</div></div></div>
+      <div class="phase"><div class="phase-period text-small">61–90 天</div><div class="rail"><span class="node"></span></div><div><div class="phase-title">完善询盘路径与转化追踪</div><div class="phase-copy">优化自然搜索落地页的产品入口、联系方式和询盘 CTA；同步检查表单、邮箱、电话及即时通讯工具的事件追踪，逐步判断哪些流量能转化为有效咨询。</div><div class="phase-kpi text-small">观察：自然搜索会话、互动质量、询盘关键事件</div></div></div>
+    </div>
+  </section>
+  <section class="panel recommendation-panel">
+    <div class="apple-section-heading"><div><h2>自动优化建议</h2><p>根据排名、CTR、跳出率与索引状态生成</p></div></div>
+    <div class="recommendation-layout">
+      <div class="recommendation-priority">
+        <div class="section-head"><div class="section-title">建议优先级</div></div>
+        <ol class="priority">
+          <li><span class="rank">1</span><div><div class="priority-title">冲刺搜索前 10</div><div class="priority-copy text-small">优化已有展示、排名 11–20 的关键词与页面。</div></div></li>
+          <li><span class="rank">2</span><div><div class="priority-title">提升美国市场 CTR</div><div class="priority-copy text-small">美国贡献 54.04% 展示，CTR 仅 0.45%。</div></div></li>
+          <li><span class="rank">3</span><div><div class="priority-title">补齐询盘追踪</div><div class="priority-copy text-small">统一表单、电话、邮箱与 WhatsApp 转化口径。</div></div></li>
+        </ol>
+      </div>
+      <ol class="seo-recommendations" id="google-seo-recommendations"></ol>
+    </div>
+  </section>
+  <footer class="dashboard-footer">
+    <div>数据源：Google Search Console · Google Analytics 4（官方 API）</div>
+    <div>数据周期：2026-03 至 2026-05 · 3 个月度归档 · 站点：example.com</div>
+    <div>聚合 Search Console 搜索表现与 Analytics 用户行为，呈现可筛选、可追踪的增长洞察。</div>
+  </footer>
+  <script id="google-seo-data" type="application/json">{}</script>
+  <script>
+    (() => {
+      const root = document.getElementById('seo-growth-dashboard-v2');
+      const dataNode = root.querySelector('#google-seo-data');
+      const seoData = JSON.parse(dataNode.textContent);
+      const report = seoData.report || {};
+      const months = seoData.months || [];
+      let monthIndex = Math.max(0, months.length - 1);
+      let reportScope = 'month';
+      let detailView = 'summary';
+      let activeKeywordDetail = null;
+      let activeKeywordDetailMode = null;
+      let activePageDetail = null;
+
+      const el = id => root.querySelector('#' + id);
+      const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+      const number = (value, digits=0) => Number(value || 0).toLocaleString(undefined, {minimumFractionDigits:digits, maximumFractionDigits:digits});
+      const duration = value => {
+        const total = Math.floor(Number(value || 0));
+        const minutes = Math.floor(total / 60);
+        const seconds = total % 60;
+        return minutes ? `${minutes}分 ${seconds}秒` : `${seconds}秒`;
+      };
+      const channelName = value => ({'Direct':'直接访问','Organic Search':'自然搜索','Paid Search':'付费搜索','Organic Social':'自然社交','Referral':'引荐流量','Unassigned':'未分配'}[value] || value);
+      const current = () => months[monthIndex] || {metrics:{},keywords:[],pages:[],channels:[],recommendations:[]};
+      const previous = () => monthIndex > 0 ? months[monthIndex - 1] : null;
+
+      function setDetailActionState(attribute, activeValue, openLabel, closeLabel) {
+        root.querySelectorAll(`[${attribute}]`).forEach(button => {
+          const active = button.getAttribute(attribute) === activeValue;
+          button.classList.toggle('is-active', active);
+          button.setAttribute('aria-expanded', String(active));
+          const labels = button.querySelectorAll('span');
+          if (labels[0]) labels[0].textContent = active ? closeLabel : openLabel;
+          if (labels[1]) labels[1].textContent = active ? '×' : '↗';
+        });
+      }
+
+      function changeLabel(key, inverse=false) {
+        const prior = previous();
+        if (!prior) return '首月基准';
+        const now = Number(current().metrics[key] || 0);
+        const before = Number(prior.metrics[key] || 0);
+        if (key === 'averagePosition') {
+          const delta = before - now;
+          if (Math.abs(delta) < .01) return '与上月持平';
+          return delta > 0 ? `较上月改善 ${number(delta,1)} 位` : `较上月下降 ${number(Math.abs(delta),1)} 位`;
+        }
+        if (!before) return '上月无基准';
+        const delta = (now-before)/before*100;
+        const better = inverse ? delta < 0 : delta > 0;
+        if (Math.abs(delta) < .05) return '与上月持平';
+        return `${better ? '改善' : '变化'} ${delta > 0 ? '+' : ''}${number(delta,1)}%`;
+      }
+
+      function renderKpis() {
+        const m = current().metrics;
+        const sparkline = key => {
+          const values = months.slice(0, monthIndex + 1).map(month => Number(month.metrics[key] || 0));
+          const low = Math.min(...values);
+          const high = Math.max(...values);
+          const range = high - low || 1;
+          const points = values.map((value,index) => `${values.length === 1 ? 46 : index * 92 / (values.length - 1)},${26 - (value - low) / range * 22}`).join(' ');
+          return `<svg class="kpi-spark" viewBox="0 0 92 30" role="img" aria-label="${escapeHtml(key)} 月度趋势"><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        };
+        const cards = [
+          ['GSC 自然点击', number(m.clicks), 'clicks', false, '来自 Google 搜索自然结果'],
+          ['GSC 搜索曝光', number(m.impressions), 'impressions', false, '搜索结果中的展示次数'],
+          ['GSC 平均排名', number(m.averagePosition,2), 'averagePosition', true, '数值越低，排名越靠前'],
+          ['GA4 独立访客', number(m.totalUsers), 'totalUsers', false, '所选月份独立访客']
+        ];
+        el('google-seo-kpis').innerHTML = cards.map(item => {
+          const prior = previous();
+          const now = Number(m[item[2]] || 0);
+          const before = prior ? Number(prior.metrics[item[2]] || 0) : now;
+          const improved = item[3] ? now < before : now > before;
+          const declined = item[3] ? now > before : now < before;
+          const trendClass = prior ? (improved ? 'trend-up' : declined ? 'trend-down' : 'trend-flat') : 'trend-flat';
+          const arrow = prior ? (improved ? '↑' : declined ? '↓' : '→') : '—';
+          return `<div class="card viz-stat"><div>${item[0]}</div><div class="viz-stat-value">${item[1]}</div><div class="metric-foot text-small ${trendClass}">${arrow} ${changeLabel(item[2],item[3])}</div><div class="kpi-note text-small">${item[4]}</div>${sparkline(item[2])}</div>`;
+        }).join('');
+        el('google-seo-period').textContent = (current().period || []).join(' — ');
+      }
+
+      function renderMonthComparison() {
+        const visible = months;
+        const reportPeriod = seoData.reportGa4 && seoData.reportGa4.period;
+        el('google-seo-period').textContent = Array.isArray(reportPeriod) && reportPeriod.length === 2
+          ? reportPeriod.join(' — ')
+          : `${visible[0]?.period?.[0] || ''} — ${visible[visible.length - 1]?.period?.[1] || ''}`;
+        el('google-seo-months').innerHTML = `<div class="seo-month-row header text-small"><div>月份</div><div>点击</div><div>曝光</div><div>排名</div><div>访客</div><div>关键事件数</div></div>` + visible.map(month => {
+          const m = month.metrics;
+          return `<div class="seo-month-row"><div>${escapeHtml(month.label)}</div><div>${number(m.clicks)}</div><div>${number(m.impressions)}</div><div>${number(m.averagePosition,1)}</div><div>${number(m.totalUsers)}</div><div>${number(m.keyEvents)}</div></div>`;
+        }).join('');
+      }
+
+      function renderExecutiveSummary() {
+        const currentQuarter = seoData.quarterComparison && seoData.quarterComparison.current;
+        const previousQuarter = seoData.quarterComparison && seoData.quarterComparison.previous;
+        const reportMonths = (currentQuarter && currentQuarter.months) || months.map(month => month.label);
+        const rangeText = report.rangeLabel || (reportMonths.length ? `${reportMonths[0]} 至 ${reportMonths[reportMonths.length - 1]}` : '本报告期');
+        const comparison = report.comparison || {};
+        const comparisonLabel = comparison.label || '上一对比周期';
+        const quarterMetrics = currentQuarter && currentQuarter.metrics;
+        if (!previousQuarter || !previousQuarter.metrics || !quarterMetrics) {
+          el('google-seo-executive-summary').innerHTML = `本报告期 <strong class="summary-primary">${escapeHtml(rangeText)}</strong> 的汇总已就绪；<strong class="summary-primary">${escapeHtml(comparisonLabel)}</strong>的官方 GA4 / GSC 归档尚未完整接入，因此暂不展示未经验证的对比结论。`;
+          return;
+        }
+        const currentMetrics = quarterMetrics;
+        const priorMetrics = previousQuarter.metrics;
+        const clickDelta = Number(priorMetrics.clicks) ? (Number(currentMetrics.clicks) - Number(priorMetrics.clicks)) / Number(priorMetrics.clicks) * 100 : 0;
+        const ctrDelta = Number(priorMetrics.ctr) ? (Number(currentMetrics.ctr) - Number(priorMetrics.ctr)) / Number(priorMetrics.ctr) * 100 : 0;
+        const rankDelta = Number(priorMetrics.averagePosition) - Number(currentMetrics.averagePosition);
+        const clickPhrase = `<strong class="${clickDelta >= 0 ? 'summary-up' : 'summary-down'}">${clickDelta >= 0 ? '增长' : '下降'} ${number(Math.abs(clickDelta),1)}%</strong>`;
+        const ctrPhrase = `<strong class="${ctrDelta >= 0 ? 'summary-up' : 'summary-down'}">${ctrDelta >= 0 ? '增长' : '下降'} ${number(Math.abs(ctrDelta),1)}%</strong>`;
+        const rankPhrase = `<strong class="${rankDelta >= 0 ? 'summary-up' : 'summary-down'}">${rankDelta >= 0 ? '改善' : '下降'} ${number(Math.abs(rankDelta),1)} 位</strong>`;
+        el('google-seo-executive-summary').innerHTML = `本报告期 <strong class="summary-primary">${escapeHtml(rangeText)}</strong> 相较<strong class="summary-primary">${escapeHtml(comparisonLabel)}</strong>：自然点击 ${clickPhrase}，CTR ${ctrPhrase}，平均排名 ${rankPhrase}。`;
+      }
+
+      function renderTrendChart() {
+        const W=840, H=230, left=60, right=26, top=28, bottom=44, base=H-bottom;
+        const shown=months;
+        const maxImpressions=Math.max(1,...shown.map(month=>Number(month.metrics.impressions||0)));
+        const maxClicks=Math.max(1,...shown.map(month=>Number(month.metrics.clicks||0)));
+        const step=(W-left-right)/Math.max(1,shown.length);
+        const barWidth=Math.min(112,step*.46);
+        const labelStride=Math.max(1,Math.ceil(92/step));
+        const layout=shown.map((month,index)=>{
+          const x=left+step*(index+.5);
+          const height=Number(month.metrics.impressions||0)/maxImpressions*(base-top-22);
+          const lineY=base-Number(month.metrics.clicks||0)/maxClicks*(base-top-22);
+          return {month,index,x,height,lineY,barTop:base-height};
+        });
+        const points=layout.map(item=>`${item.x.toFixed(1)},${item.lineY.toFixed(1)}`);
+        const bars=layout.map(item=>{
+          const showLabel=item.index%labelStride===0;
+          return `<rect x="${(item.x-barWidth/2).toFixed(1)}" y="${item.barTop.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${item.height.toFixed(1)}" rx="8" fill="var(--viz-series-1)" opacity=".86"/>${showLabel ? `<text x="${item.x}" y="${Math.max(top+12,item.barTop-10).toFixed(1)}" text-anchor="middle" class="trend-value">${number(item.month.metrics.impressions)}</text>` : ''}<text x="${item.x}" y="${base+28}" text-anchor="middle" class="trend-axis">${escapeHtml(item.month.label.slice(5))}月</text>`;
+        }).join('');
+        const dots=layout.map(item=>{
+          const barLabelY=Math.max(top+12,item.barTop-10);
+          let labelY=item.lineY-15;
+          if (Math.abs(labelY-barLabelY)<28) labelY=item.lineY+25;
+          labelY=Math.max(top+14,Math.min(base-12,labelY));
+          const showLabel=item.index%labelStride===0;
+          const label=`${number(item.month.metrics.clicks)} 点击`;
+          const labelWidth=Math.max(54,label.length*13);
+          return `<circle cx="${item.x}" cy="${item.lineY}" r="5" fill="var(--viz-series-2)" stroke="var(--card)" stroke-width="3"/>${showLabel ? `<rect x="${(item.x-labelWidth/2).toFixed(1)}" y="${(labelY-15).toFixed(1)}" width="${labelWidth}" height="21" rx="4" fill="var(--card)" opacity=".94"/><text x="${item.x}" y="${labelY.toFixed(1)}" text-anchor="middle" class="trend-click">${label}</text>` : ''}`;
+        }).join('');
+        const grids=[0,.33,.66,1].map(value=>{const y=base-value*(base-top);return `<line x1="${left}" x2="${W-right}" y1="${y}" y2="${y}" class="trend-grid"/>`;}).join('');
+        el('google-seo-trend-chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="月度搜索曝光和点击趋势"><title>月度搜索增长趋势</title>${grids}${bars}<polyline points="${points.join(' ')}" fill="none" stroke="var(--viz-series-2)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`;
+      }
+
+      function renderSourceChart() {
+        const rows=[...current().channels].sort((a,b)=>Number(b.sessions||0)-Number(a.sessions||0)).slice(0,5);
+        const max=Math.max(1,...rows.map(row=>Number(row.sessions||0)));
+        el('google-seo-source-chart').innerHTML=rows.map(row=>`<div class="source-row"><div>${escapeHtml(channelName(row.sessionDefaultChannelGroup))}</div><div class="source-track"><span style="width:${Math.max(2,Number(row.sessions||0)/max*100).toFixed(1)}%"></span></div><strong>${number(row.sessions)}</strong></div>`).join('');
+      }
+
+      function renderQuality() {
+        const month = current();
+        const metrics = month.metrics;
+        const organic = month.channels.find(row => String(row.sessionDefaultChannelGroup).toLowerCase().includes('organic search')) || {};
+        const organicSessions = Number(organic.sessions || 0);
+        const share = metrics.sessions ? organicSessions / metrics.sessions * 100 : 0;
+        const organicBounce = Number(organic.bounceRate || 0) * 100;
+        const organicDuration = Number(organic.averageSessionDuration || 0);
+        el('google-seo-quality').innerHTML = [
+          ['自然搜索会话', number(organicSessions), `占全站 ${number(share,1)}%`],
+          ['自然搜索访客', number(organic.totalUsers || 0), `全站 ${number(metrics.totalUsers)}`],
+          ['自然搜索跳出率', `${number(organicBounce,1)}%`, `全站 ${number(metrics.bounceRate,1)}%`],
+          ['自然搜索会话时长', duration(organicDuration), `全站 ${duration(metrics.averageSessionDuration)}`]
+        ].map(item => `<div class="seo-quality-item organic"><div class="seo-quality-note text-small">${item[0]}</div><div class="seo-quality-value">${item[1]}</div><div class="seo-quality-note text-small">${item[2]}</div></div>`).join('');
+      }
+
+      function renderRecommendations() {
+        const items = current().recommendations || [];
+        const grouped = new Map();
+        items.forEach(item => {
+          const key = `${item.type}\u0000${item.text}`;
+          if (!grouped.has(key)) grouped.set(key,{type:item.type,text:item.text,targets:[]});
+          grouped.get(key).targets.push(item.target);
+        });
+        const groups = [...grouped.values()];
+        el('google-seo-recommendations').innerHTML = groups.length ? groups.map(group => `<li class="recommendation-group"><div class="recommendation-group-head"><span class="viz-badge">${escapeHtml(group.type)}</span><strong>${number(group.targets.length)} 个对象</strong></div><div class="priority-copy">${escapeHtml(group.text)}</div><div class="recommendation-targets">${group.targets.map(target => `<span>${escapeHtml(target)}</span>`).join('')}</div></li>`).join('') : '<li class="seo-empty">当前筛选范围内没有触发优化建议</li>';
+      }
+
+      function movement(value) {
+        if (value === null || value === undefined) return '—';
+        const numeric = Number(value);
+        if (Math.abs(numeric) < .01) return '持平';
+        return numeric > 0 ? `↑ ${number(numeric,1)} 位` : `↓ ${number(Math.abs(numeric),1)} 位`;
+      }
+
+      function reportRows(key, identity) {
+        if (reportScope === 'month') return current()[key] || [];
+        const grouped = new Map();
+        months.forEach(month => (month[key] || []).forEach(row => {
+          const id = String(row[identity] || '');
+          if (!id) return;
+          const item = grouped.get(id) || {...row, clicks:0, impressions:0, positionWeight:0};
+          const impressions = Number(row.impressions || 0);
+          item.clicks += Number(row.clicks || 0);
+          item.impressions += impressions;
+          item.positionWeight += Number(row.position || 0) * impressions;
+          grouped.set(id, item);
+        }));
+        return [...grouped.values()].map(item => ({
+          ...item,
+          ctr: item.impressions ? item.clicks / item.impressions * 100 : 0,
+          position: item.impressions ? item.positionWeight / item.impressions : 0,
+        }));
+      }
+
+      function renderKeywords() {
+        const query = el('google-seo-filter').value.trim().toLowerCase();
+        const sourceRows = reportRows('keywords', 'query');
+        const rows = [...sourceRows]
+          .filter(row => String(row.query || '').toLowerCase().includes(query))
+          .sort((a,b) => Number(b.clicks || 0) - Number(a.clicks || 0) || Number(b.impressions || 0) - Number(a.impressions || 0))
+          .slice(0, 10);
+        if (activeKeywordDetailMode === 'trend' && activeKeywordDetail && !rows.some(row => row.query === activeKeywordDetail)) {
+          activeKeywordDetail = null;
+          activeKeywordDetailMode = null;
+          el('google-seo-keyword-detail').hidden = true;
+        }
+        el('google-seo-keyword-count').textContent = `显示 ${rows.length} / ${sourceRows.length} 个查询词${reportScope === 'period' ? ' · 报告期合计' : ''}`;
+        const standardHeader = `<div class="seo-data-row header text-small"><div>查询词</div><div>点击</div><div>展示</div><div>CTR</div><div>平均排名</div><div></div></div>`;
+        const standardRows = rows.map(row => `<div class="seo-data-row"><div class="seo-name"><div class="seo-name-text">${escapeHtml(row.query)}</div></div><div>${number(row.clicks)}</div><div>${number(row.impressions)}</div><div>${number(row.ctr,2)}%</div><div>${number(row.position,1)}</div><div><button class="seo-row-action" type="button" data-keyword-detail="${escapeHtml(row.query)}"><span>查看趋势</span><span aria-hidden="true">↗</span></button></div></div>`).join('');
+        el('google-seo-keywords').innerHTML = standardHeader + (rows.length ? standardRows : '<div class="seo-empty">没有匹配的关键词</div>');
+        setDetailActionState('data-keyword-detail', activeKeywordDetailMode === 'trend' ? activeKeywordDetail : null, '查看趋势', '收起趋势');
+        root.querySelectorAll('[data-keyword-detail]').forEach(button => button.addEventListener('click', () => {
+          const queryValue = button.dataset.keywordDetail;
+          const host = el('google-seo-keyword-detail');
+          if (activeKeywordDetail === queryValue && activeKeywordDetailMode === 'trend' && !host.hidden) {
+            activeKeywordDetail = null;
+            activeKeywordDetailMode = null;
+            host.hidden = true;
+            setDetailActionState('data-keyword-detail', null, '查看趋势', '收起趋势');
+            return;
+          }
+          activeKeywordDetail = queryValue;
+          activeKeywordDetailMode = 'trend';
+          renderKeywordDetail(queryValue, 'trend');
+          setDetailActionState('data-keyword-detail', activeKeywordDetail, '查看趋势', '收起趋势');
+        }));
+      }
+
+      function renderMarketOpportunities() {
+        const rows = current().marketKeywords || [];
+        const host = el('google-seo-market-opportunities');
+        const panel = host.closest('.market-validation-panel');
+        if (!rows.length) {
+          panel.hidden = true;
+          host.hidden = true;
+          host.innerHTML = '';
+          return;
+        }
+        panel.hidden = false;
+        host.hidden = false;
+        const serpCount = rows.filter(row => current().serpDetail && current().serpDetail.keyword === row.query).length;
+        const snapshotPeriod = report.type === 'monthly' ? `${current().label || report.rangeLabel} 市场指标快照` : `${report.rangeLabel || '本报告期'} · 市场指标快照`;
+        host.innerHTML = `<div class="section-head"><div><div class="market-opportunity-eyebrow text-small">DataForSEO · 第三方关键词市场快照</div><div class="section-title">市场机会验证</div><div class="market-opportunity-period text-small">${escapeHtml(snapshotPeriod)} · 搜索需求、CPC、竞争度与 SERP 按采集时点展示</div><div class="market-opportunity-source text-small">仅展示 GSC 已筛选的 ${rows.length} 个机会词。该信息为第三方市场估算与结果页快照，不等同于 Google Ads 后台的逐条实时数据，也不替代 GSC / GA4 官方一方表现数据。</div></div><div class="market-opportunity-summary text-small"><span class="is-collected">已采集</span><span>${rows.length} 个机会词</span><span>${serpCount} 个 SERP 快照</span></div></div><div class="market-opportunity-list"><div class="market-opportunity-row header text-small"><div>查询词</div><div>搜索需求</div><div>CPC 快照</div><div>付费竞争度</div><div>SERP 详情</div></div>${rows.map(row => { const serpAvailable = current().serpDetail && current().serpDetail.keyword === row.query; const competition = String(row.competition || '').toLowerCase(); const competitionClass = ['high','medium','low'].includes(competition) ? ` is-${competition}` : ''; return `<div class="market-opportunity-row"><div><strong>${escapeHtml(row.query)}</strong></div><div class="market-opportunity-value">${row.search_volume == null ? '—' : number(row.search_volume)}</div><div class="market-opportunity-value">${row.cpc == null ? '—' : `$${number(row.cpc,2)}`}</div><div>${competition ? `<span class="market-opportunity-competition${competitionClass}">${escapeHtml(competition.toUpperCase())}</span>` : '—'}</div><div>${serpAvailable ? `<button class="seo-row-action market-opportunity-serp" type="button" data-market-serp="${escapeHtml(row.query)}"><span>查看 SERP</span><span aria-hidden="true">↗</span></button>` : '<span class="market-opportunity-no-serp" aria-label="未采集 SERP">—</span>'}</div></div>`; }).join('')}</div>`;
+        setDetailActionState('data-market-serp', activeKeywordDetailMode === 'serp' ? activeKeywordDetail : null, '查看 SERP', '收起 SERP');
+        root.querySelectorAll('[data-market-serp]').forEach(button => button.addEventListener('click', () => {
+          const queryValue = button.dataset.marketSerp;
+          const detailHost = el('google-seo-market-serp-detail');
+          if (activeKeywordDetail === queryValue && activeKeywordDetailMode === 'serp' && !detailHost.hidden) {
+            activeKeywordDetail = null;
+            activeKeywordDetailMode = null;
+            detailHost.hidden = true;
+            setDetailActionState('data-market-serp', null, '查看 SERP', '收起 SERP');
+            return;
+          }
+          activeKeywordDetail = queryValue;
+          activeKeywordDetailMode = 'serp';
+          renderMarketSerpDetail(queryValue);
+          setDetailActionState('data-keyword-detail', null, '查看趋势', '收起趋势');
+          setDetailActionState('data-market-serp', activeKeywordDetail, '查看 SERP', '收起 SERP');
+        }));
+      }
+
+      function renderMarketSerpDetail(query) {
+        const host = el('google-seo-market-serp-detail');
+        const serp = current().serpDetail && current().serpDetail.keyword === query ? current().serpDetail : null;
+        const serpHtml = serp ? `<div class="seo-serp-results" role="list">${(serp.organic_results || []).slice(0,10).map(item => `<a class="seo-serp-result" role="listitem" href="${escapeHtml(item.url || '')}" target="_blank" rel="noopener noreferrer"><span class="seo-serp-rank">第 ${number(item.rank)} 位</span><span class="seo-serp-domain">${escapeHtml(item.domain || '')}</span><span class="seo-serp-title">${escapeHtml(item.title || '')}</span></a>`).join('') || '<div class="seo-empty">未返回自然结果</div>'}</div>` : '<div class="seo-empty">未返回 SERP 数据</div>';
+        host.hidden = false;
+        host.innerHTML = `<div class="seo-detail-title">${escapeHtml(query)} · Google 美国英语桌面端 SERP</div>${serpHtml}`;
+      }
+
+      function renderKeywordDetail(query, mode = 'trend') {
+        const history = months.map(month => ({month:month.label,row:month.keywords.find(item => item.query === query)})).filter(item => item.row);
+        const host = el('google-seo-keyword-detail');
+        host.hidden = false;
+        host.classList.toggle('market-opportunity-serp-detail', mode === 'serp');
+        const serp = current().serpDetail && current().serpDetail.keyword === query ? current().serpDetail : null;
+        const serpHtml = serp ? `<div class="seo-serp-results" role="list">${(serp.organic_results || []).slice(0,10).map(item => `<a class="seo-serp-result" role="listitem" href="${escapeHtml(item.url || '')}" target="_blank" rel="noopener noreferrer"><span class="seo-serp-rank">第 ${number(item.rank)} 位</span><span class="seo-serp-domain">${escapeHtml(item.domain || '')}</span><span class="seo-serp-title">${escapeHtml(item.title || '')}</span></a>`).join('') || '<div class="seo-empty">未返回自然结果</div>'}</div>` : '<div class="seo-empty">未返回 SERP 数据</div>';
+        host.innerHTML = mode === 'serp'
+          ? `<div class="seo-detail-title">${escapeHtml(query)} · Google 美国英语桌面端 SERP</div>${serpHtml}`
+          : `<div class="seo-detail-title">${escapeHtml(query)}</div><div class="seo-detail-grid">${history.map(item => `<div class="seo-detail-cell"><div class="text-small text-muted">${escapeHtml(item.month)}</div><div>平均排名 ${number(item.row.position,1)}</div><div class="text-small">${number(item.row.clicks)} 点击 · ${number(item.row.impressions)} 曝光</div></div>`).join('')}</div>`;
+      }
+
+      function renderPages() {
+        const query = el('google-seo-filter').value.trim().toLowerCase();
+        const sourceRows = reportRows('pages', 'path');
+        const rows = sourceRows.filter(row => `${row.path} ${row.page}`.toLowerCase().includes(query)).slice(0,10);
+        if (activePageDetail && !rows.some(row => row.path === activePageDetail)) {
+          activePageDetail = null;
+          el('google-seo-page-detail').hidden = true;
+        }
+        el('google-seo-page-count').textContent = `显示 ${rows.length} / ${sourceRows.length} 个页面${reportScope === 'period' ? ' · 报告期合计' : ''}`;
+        const totals = sourceRows.reduce((sum,row) => {
+          const impressions = Number(row.impressions || 0);
+          sum.clicks += Number(row.clicks || 0);
+          sum.impressions += impressions;
+          sum.positionWeight += Number(row.position || 0) * impressions;
+          return sum;
+        }, {clicks:0,impressions:0,positionWeight:0});
+        const totalCtr = totals.impressions ? totals.clicks / totals.impressions * 100 : 0;
+        const totalPosition = totals.impressions ? totals.positionWeight / totals.impressions : 0;
+        const totalLabel = reportScope === 'period' ? '报告期页面维度合计' : 'GSC 总计';
+        const totalRow = `<div class="seo-data-row seo-total-row text-small"><div>${totalLabel}</div><div>${number(totals.clicks)}</div><div>${number(totals.impressions)}</div><div>${number(totalCtr,2)}%</div><div>${number(totalPosition,2)}</div><div></div></div>`;
+        el('google-seo-pages').innerHTML = `<div class="seo-data-row header text-small"><div>页面</div><div>点击</div><div>展示</div><div>CTR</div><div>平均排名</div><div></div></div>${totalRow}` + (rows.length ? rows.map(row => `<div class="seo-data-row"><div class="seo-name"><div class="seo-name-text">${escapeHtml(row.path)}</div></div><div>${number(row.clicks)}</div><div>${number(row.impressions)}</div><div>${number(row.ctr,2)}%</div><div>${number(row.position,1)}</div><div><button class="seo-row-action" type="button" data-page-detail="${escapeHtml(row.path)}"><span>页面分析</span><span aria-hidden="true">↗</span></button></div></div>`).join('') : '<div class="seo-empty">没有匹配的页面</div>');
+        setDetailActionState('data-page-detail', activePageDetail, '页面分析', '收起分析');
+        root.querySelectorAll('[data-page-detail]').forEach(button => button.addEventListener('click', () => {
+          const pathValue = button.dataset.pageDetail;
+          const host = el('google-seo-page-detail');
+          if (activePageDetail === pathValue && !host.hidden) {
+            activePageDetail = null;
+            host.hidden = true;
+            setDetailActionState('data-page-detail', null, '页面分析', '收起分析');
+            return;
+          }
+          activePageDetail = pathValue;
+          renderPageDetail(pathValue);
+          setDetailActionState('data-page-detail', activePageDetail, '页面分析', '收起分析');
+        }));
+      }
+
+      function renderPageDetail(path) {
+        const history = months.map(month => ({month:month.label,row:month.pages.find(item => item.path === path)})).filter(item => item.row);
+        const host = el('google-seo-page-detail');
+        host.hidden = false;
+        host.innerHTML = `<div class="seo-detail-title">${escapeHtml(path)}</div><div class="seo-detail-grid">${history.map(item => `<div class="seo-detail-cell"><div class="text-small text-muted">${escapeHtml(item.month)}</div><div>${number(item.row.clicks)} 点击 · ${number(item.row.impressions)} 展示</div><div class="text-small">CTR ${number(item.row.ctr,2)}% · 平均排名 ${number(item.row.position,1)}</div></div>`).join('')}</div>`;
+      }
+
+      function renderChannels() {
+        const channelTotals = new Map();
+        months.forEach(month => (month.channels || []).forEach(row => {
+          const key = row.sessionDefaultChannelGroup || '(not set)';
+          const sessions = Number(row.sessions || 0);
+          const item = channelTotals.get(key) || {sessionDefaultChannelGroup:key, sessions:0, keyEvents:0, engagementSeconds:0, engagementSessions:0};
+          item.sessions += sessions;
+          item.keyEvents += Number(row.keyEvents || 0);
+          const engagement = Number(row.averageEngagementTimePerSession);
+          if (Number.isFinite(engagement) && engagement >= 0) {
+            item.engagementSeconds += engagement * sessions;
+            item.engagementSessions += sessions;
+          }
+          channelTotals.set(key, item);
+        }));
+        const rows = [...channelTotals.values()].sort((a,b) => Number(b.sessions || 0) - Number(a.sessions || 0));
+        const max = Math.max(1,...rows.map(row => Number(row.sessions || 0)));
+        const totalSessions = rows.reduce((sum,row) => sum + Number(row.sessions || 0), 0);
+        const totalEvents = rows.reduce((sum,row) => sum + Number(row.keyEvents || 0), 0);
+        const engagementSessions = rows.reduce((sum,row) => sum + Number(row.engagementSessions || 0), 0);
+        const totalEngagement = engagementSessions ? rows.reduce((sum,row) => sum + Number(row.engagementSeconds || 0), 0) / engagementSessions : null;
+        const totalLabel = Number.isFinite(totalEngagement) ? duration(totalEngagement) : '\\';
+        const header = `<div class="seo-channel-head text-small"><span></span><span></span><span>GA4 会话数</span><span>平均互动时长</span><span>关键事件数</span></div>`;
+        const total = `<div class="seo-channel-row seo-channel-total"><div>总计</div><div></div><div class="num">${number(totalSessions)}</div><div class="seo-channel-meta text-small">${totalLabel}</div><div class="num">${number(totalEvents)}</div></div>`;
+        el('google-seo-channels').innerHTML = header + total + rows.map(row => {
+          const engagement = row.engagementSessions ? row.engagementSeconds / row.engagementSessions : null;
+          const label = Number.isFinite(engagement) ? duration(engagement) : '\\';
+          return `<div class="seo-channel-row"><div>${escapeHtml(channelName(row.sessionDefaultChannelGroup))}</div><div class="seo-channel-track"><div class="seo-channel-fill" style="width:${Math.max(1.5,Number(row.sessions || 0)/max*100).toFixed(1)}%"></div></div><div class="num">${number(row.sessions)}</div><div class="seo-channel-meta text-small">${label}</div><div class="num">${number(row.keyEvents)}</div></div>`;
+        }).join('');
+      }
+
+      function renderReportPeriodPanels() {
+        renderExecutiveSummary();
+        renderTrendChart();
+        renderSourceChart();
+        renderMonthComparison();
+        renderChannels();
+      }
+
+      function renderSelectedMonthDetails() {
+        activeKeywordDetail = null;
+        activeKeywordDetailMode = null;
+        activePageDetail = null;
+        renderKpis();
+        renderQuality();
+        renderRecommendations();
+        renderKeywords();
+        renderMarketOpportunities();
+        renderPages();
+        el('google-seo-keyword-detail').hidden = true;
+        el('google-seo-market-serp-detail').hidden = true;
+        el('google-seo-page-detail').hidden = true;
+      }
+
+      const monthSelect = el('google-seo-month');
+      monthSelect.innerHTML = months.map((month,index) => `<option value="${index}"${index === monthIndex ? ' selected' : ''}>${escapeHtml(month.label)}</option>`).join('');
+      monthSelect.addEventListener('change', () => { monthIndex = Number(monthSelect.value); renderSelectedMonthDetails(); });
+      const reportTotalToggle = el('google-seo-report-total-toggle');
+      const toggleReportScope = () => {
+        reportScope = reportScope === 'month' ? 'period' : 'month';
+        const aggregate = reportScope === 'period';
+        reportTotalToggle.textContent = aggregate ? '返回按月查看' : '查看报告期合计';
+        reportTotalToggle.setAttribute('aria-pressed', String(aggregate));
+        reportTotalToggle.dataset.reportScope = aggregate ? 'month' : 'period';
+        reportTotalToggle.classList.toggle('is-active', aggregate);
+        activeKeywordDetail = null;
+        activeKeywordDetailMode = null;
+        activePageDetail = null;
+        el('google-seo-keyword-detail').hidden = true;
+        el('google-seo-market-serp-detail').hidden = true;
+        el('google-seo-page-detail').hidden = true;
+        renderKeywords();
+        renderMarketOpportunities();
+        renderPages();
+      };
+      if (months.length < 2) {
+        reportTotalToggle.disabled = true;
+        reportTotalToggle.setAttribute('aria-disabled', 'true');
+        reportTotalToggle.title = '月度报告仅含一个报告月，无可汇总范围';
+        reportTotalToggle.classList.add('is-disabled');
+      } else {
+        reportTotalToggle.addEventListener('click', toggleReportScope);
+      }
+      el('google-seo-filter').addEventListener('input', () => { renderKeywords(); renderPages(); });
+      const detailTabs = [...root.querySelectorAll('[data-panel="google-seo"] [data-seo-view]')];
+      const detailPanels = [...root.querySelectorAll('[data-panel="google-seo"] [data-seo-panel]')];
+      detailTabs.forEach(button => button.addEventListener('click', () => {
+        detailView = button.dataset.seoView;
+        detailTabs.forEach(item => { const active=item===button; item.classList.toggle('btn-primary',active); item.setAttribute('aria-pressed',String(active)); });
+        detailPanels.forEach(panel => { panel.hidden = panel.dataset.seoPanel !== detailView; });
+        if (detailView === 'keywords') { el('google-seo-filter').placeholder='输入关键词'; renderKeywords(); }
+        if (detailView === 'seo-pages') { el('google-seo-filter').placeholder='输入 URL 路径'; renderPages(); }
+        if (detailView === 'summary' || detailView === 'seo-channels') el('google-seo-filter').placeholder='输入关键词或 URL 路径';
+      }));
+      const summaryPanel = root.querySelector('[data-seo-panel="summary"]');
+      const reportTrends = root.querySelector('#report-period-trends-content');
+      const trendGrid = summaryPanel.querySelector('.dashboard-chart-grid');
+      const monthHeading = summaryPanel.querySelector(':scope > .section-head');
+      const monthTable = summaryPanel.querySelector('#google-seo-months');
+      reportTrends.append(trendGrid, monthHeading, monthTable);
+      summaryPanel.hidden = true;
+      const reportFlow = root.querySelector('#report-period-flow');
+      const flowPanel = root.querySelector('[data-seo-panel="seo-channels"]');
+      flowPanel.hidden = false;
+      reportFlow.append(flowPanel);
+      root.querySelector('[data-panel="google-seo"]').hidden = false;
+      root.querySelectorAll('[data-seo-panel="keywords"], [data-seo-panel="seo-pages"]').forEach(panel => { panel.hidden = false; });
+      renderReportPeriodPanels();
+      renderSelectedMonthDetails();
+    })();
+  </script>
+  <div class="tooltip" id="seo-v2-tooltip" role="status"></div>
+
+  <script>
+    (() => {
+      const root = document.getElementById('seo-growth-dashboard-v2');
+      const data = JSON.parse(root.querySelector('#google-seo-data').textContent);
+      const strategy = data.strategyOpportunities;
+      const tab = root.querySelector('[data-view="strategy"]');
+      const panel = root.querySelector('[data-panel="strategy"]');
+      if (!strategy) {
+        if (tab) tab.remove();
+        if (panel) panel.remove();
+        return;
+      }
+      tab.hidden = false;
+      panel.hidden = false;
+      const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+      const safeUrl = value => /^https?:\/\//i.test(String(value || '')) ? String(value) : '';
+      const list = (selector, rows, render, empty) => {
+        const target = root.querySelector(selector);
+        if (target) target.innerHTML = rows.length ? rows.map(render).join('') : `<p class="strategy-empty">${escapeHtml(empty)}</p>`;
+      };
+      const location = strategy.location || '未注明地区';
+      const language = strategy.language || '未注明语言';
+      const month = strategy.archiveMonth || '未注明月份';
+      const priorityOpportunities = strategy.priorityOpportunities || [];
+      const competitorDirections = strategy.competitorDirections || [];
+      const domainKeywords = strategy.domainKeywords || [];
+      const meta = root.querySelector('#strategy-opportunities-meta');
+      if (meta) meta.textContent = `采集：${strategy.collectedAt || month} · ${location} · ${language}`;
+      const priorityCount = root.querySelector('#strategy-priority-count');
+      const competitorCount = root.querySelector('#strategy-competitor-count');
+      const referenceCount = root.querySelector('#strategy-reference-count');
+      if (priorityCount) priorityCount.textContent = `${priorityOpportunities.length} 个优先主题`;
+      if (competitorCount) competitorCount.textContent = `${competitorDirections.length} 个竞品方向`;
+      if (referenceCount) referenceCount.textContent = `${domainKeywords.length} 个外部参考词`;
+      list('#strategy-priority-list', priorityOpportunities, row => {
+        const url = safeUrl(row.matchedUrl);
+        const link = url ? `<a class="strategy-page-link" href="${escapeHtml(url)}" target="_blank" rel="noreferrer"><span>打开承接页</span><span aria-hidden="true">↗</span></a>` : '';
+        return `<article class="strategy-item"><div class="strategy-item-top"><strong>${escapeHtml(row.keyword)}</strong><span class="strategy-pill">${escapeHtml(row.priority || '优先')}</span></div><p>${escapeHtml(row.recommendation || '核对页面覆盖与商业意图，再决定是否优化。')}</p><div class="strategy-item-meta"><span>当前外部排名：${escapeHtml(row.currentRank ?? '—')}</span><span>${escapeHtml(row.pageType || '页面类型待确认')}</span>${link}</div></article>`;
+      }, '本次试采集没有可展示的优先机会。');
+      list('#strategy-competitor-list', competitorDirections, row => {
+        return `<article class="strategy-item"><div class="strategy-item-top"><strong>${escapeHtml(row.keyword)}</strong><span class="strategy-pill muted">候选</span></div><p>${escapeHtml(row.competitor || '候选竞品')} · ${escapeHtml(row.pageType || '页面类型待确认')}</p><div class="strategy-item-meta"><span>${escapeHtml(row.intent || '商业意图待确认')}</span></div></article>`;
+      }, '本次试采集没有保留可比的竞品方向。');
+      list('#strategy-keyword-list', domainKeywords, row => {
+        const url = safeUrl(row.url);
+        const link = url ? `<a class="strategy-page-link strategy-keyword-page-link" href="${escapeHtml(url)}" target="_blank" rel="noreferrer"><span>打开页面</span><span aria-hidden="true">↗</span></a>` : '页面地址未提供';
+        const traffic = row.trafficEstimate === null || row.trafficEstimate === undefined ? '—' : Number(row.trafficEstimate).toFixed(1);
+        return `<article class="strategy-keyword-row"><strong>${escapeHtml(row.keyword)}</strong><span>外部排名 #${escapeHtml(row.rank ?? '—')}</span><span>预估自然流量 ${escapeHtml(traffic)}</span>${link}</article>`;
+      }, '本次试采集没有可展示的外部排名词。');
+    })();
+  </script>
+
+  <script>
+    (() => {
+      const root = document.getElementById('seo-growth-dashboard-v2');
+      const seoData = JSON.parse(root.querySelector('#google-seo-data').textContent);
+      const tabs = [...root.querySelectorAll('[data-view]')];
+      const panels = [...root.querySelectorAll('[data-panel]')];
+      tabs.forEach(tab => tab.addEventListener('click', () => {
+        const view = tab.dataset.view;
+        tabs.forEach(item => { const active = item === tab; item.classList.toggle('btn-primary', active); item.setAttribute('aria-pressed', String(active)); });
+        panels.forEach(panel => { panel.hidden = panel.dataset.panel !== view; });
+      }));
+
+      const countryCodeToRegion = {afg:'AF',aia:'AI',alb:'AL',and:'AD',are:'AE',arg:'AR',aus:'AU',aut:'AT',aze:'AZ',bel:'BE',ben:'BJ',bfa:'BF',bgd:'BD',bgr:'BG',bhr:'BH',bhs:'BS',blr:'BY',bol:'BO',bra:'BR',brb:'BB',brn:'BN',bwa:'BW',can:'CA',che:'CH',chl:'CL',chn:'CN',civ:'CI',cmr:'CM',cod:'CD',cog:'CG',col:'CO',cri:'CR',cub:'CU',cym:'KY',cyp:'CY',cze:'CZ',deu:'DE',dji:'DJ',dnk:'DK',dom:'DO',dza:'DZ',ecu:'EC',egy:'EG',esp:'ES',est:'EE',eth:'ET',fin:'FI',fji:'FJ',fra:'FR',gbr:'GB',geo:'GE',gha:'GH',gnb:'GW',grc:'GR',gtm:'GT',guy:'GY',hkg:'HK',hnd:'HN',hrv:'HR',hun:'HU',idn:'ID',ind:'IN',irl:'IE',irn:'IR',irq:'IQ',isr:'IL',ita:'IT',jam:'JM',jor:'JO',jpn:'JP',kaz:'KZ',ken:'KE',kgz:'KG',khm:'KH',kor:'KR',kwt:'KW',lbn:'LB',lbr:'LR',lby:'LY',lie:'LI',lka:'LK',ltu:'LT',lux:'LU',lva:'LV',mac:'MO',mar:'MA',mda:'MD',mex:'MX',mli:'ML',mmr:'MM',mne:'ME',mng:'MN',mrt:'MR',mtq:'MQ',mus:'MU',mwi:'MW',mys:'MY',myt:'YT',nga:'NG',nic:'NI',nld:'NL',nor:'NO',npl:'NP',nzl:'NZ',omn:'OM',pak:'PK',pan:'PA',per:'PE',phl:'PH',pol:'PL',pri:'PR',prt:'PT',pry:'PY',pse:'PS',qat:'QA',rou:'RO',rus:'RU',rwa:'RW',sau:'SA',sen:'SN',sgp:'SG',sle:'SL',slv:'SV',som:'SO',srb:'RS',svn:'SI',swe:'SE',sxm:'SX',syr:'SY',tha:'TH',tjk:'TJ',tkm:'TM',tto:'TT',tun:'TN',tur:'TR',twn:'TW',tza:'TZ',uga:'UG',ukr:'UA',ury:'UY',usa:'US',uzb:'UZ',ven:'VE',vnm:'VN',vut:'VU',yem:'YE',zaf:'ZA',zmb:'ZM',zzz:'ZZ'};
+      const countryDisplayNames = new Intl.DisplayNames(['en'], {type:'region'});
+      const countryName = value => {
+        const code = countryCodeToRegion[String(value || '').toLowerCase()];
+        return code ? countryDisplayNames.of(code) : String(value || '').toUpperCase();
+      };
+      const reportMonths = seoData.months || [];
+      const countryTotals = new Map();
+      const sourceTotals = new Map();
+      reportMonths.forEach(month => {
+        (month.countries || []).forEach(row => {
+          const key = row.country || 'unknown';
+          const item = countryTotals.get(key) || {country:key, clicks:0, impressions:0};
+          item.clicks += Number(row.clicks || 0);
+          item.impressions += Number(row.impressions || 0);
+          countryTotals.set(key,item);
+        });
+        (month.sources || []).forEach(row => {
+          const key = row.sessionSource || '(not set)';
+          const item = sourceTotals.get(key) || {sessionSource:key, sessions:0, keyEvents:0, engagementSeconds:0, engagementSessions:0};
+          const sessions = Number(row.sessions || 0);
+          item.sessions += sessions;
+          item.keyEvents += Number(row.keyEvents || 0);
+          const engagement = Number(row.averageEngagementTimePerSession);
+          if (Number.isFinite(engagement) && engagement >= 0) {
+            item.engagementSeconds += engagement * sessions;
+            item.engagementSessions += sessions;
+          }
+          sourceTotals.set(key,item);
+        });
+      });
+      if (seoData.reportGa4 && Array.isArray(seoData.reportGa4.sources)) {
+        sourceTotals.clear();
+        seoData.reportGa4.sources.forEach(row => {
+          const sessions = Number(row.sessions || 0);
+          const engagement = Number(row.averageEngagementTimePerSession);
+          sourceTotals.set(row.sessionSource || '(not set)', {
+            sessionSource: row.sessionSource || '(not set)',
+            sessions,
+            keyEvents: Number(row.keyEvents || 0),
+            engagementSeconds: Number.isFinite(engagement) ? engagement * sessions : 0,
+            engagementSessions: Number.isFinite(engagement) ? sessions : 0
+          });
+        });
+      }
+      const reportCountries = seoData.reportGsc && Array.isArray(seoData.reportGsc.countries) ? seoData.reportGsc.countries : null;
+      const markets = reportCountries
+        ? reportCountries.slice(0,5)
+        : [...countryTotals.values()]
+          .sort((a,b) => Number(b.clicks || 0) - Number(a.clicks || 0) || Number(b.impressions || 0) - Number(a.impressions || 0))
+          .slice(0,5);
+      const maxImpressions = Math.max(1,...markets.map(row => Number(row.impressions || 0)));
+      const marketRows = markets.map(row => `<div class="hrow"><div class="hlabel">${countryName(row.country)}</div><div class="htrack"><div class="hbar" style="width:${Math.max(Number(row.impressions || 0)/maxImpressions*100,1.6).toFixed(1)}%"></div></div><div class="hvalue">${Number(row.impressions || 0).toLocaleString()}</div><div class="hclicks">${Number(row.clicks || 0)}</div></div>`).join('');
+      root.querySelector('#market-chart').innerHTML = `<div class="hchart" role="img" aria-label="五个重点市场的 Google Search Console 展示和点击"><div class="hmetric-head text-small"><span></span><span></span><span>展示</span><span>点击</span></div>${marketRows}</div>`;
+      const marketNote = root.querySelector('[data-panel="markets"] .section-note');
+      if (marketNote && markets[0]) marketNote.textContent = `${countryName(markets[0].country)} 曝光最大，但搜索结果吸引力不足`;
+
+      const trafficHost = root.querySelector('#traffic-acquisition-summary');
+      if (trafficHost) {
+        const sourceNames = {'(direct)':'直接访问',google:'Google 自然搜索','facebook.com':'Facebook','techprimex.com':'techprimex.com','(not set)':'Unassigned（GA4 未识别来源）','m.facebook.com':'m.facebook.com','tfoow.com':'tfoow.com','aunro.com':'aunro.com','chatgpt.com':'chatgpt.com'};
+        const sourceRows = [...sourceTotals.values()].sort((a,b) => Number(b.sessions || 0) - Number(a.sessions || 0));
+        const totalSessions = sourceRows.reduce((sum,row) => sum + Number(row.sessions || 0), 0);
+        const totalEvents = sourceRows.reduce((sum,row) => sum + Number(row.keyEvents || 0), 0);
+        const engagementSeconds = sourceRows.reduce((sum,row) => sum + Number(row.engagementSeconds || 0), 0);
+        const engagementSessions = sourceRows.reduce((sum,row) => sum + Number(row.engagementSessions || 0), 0);
+        const engagement = engagementSessions ? engagementSeconds / engagementSessions : null;
+        const duration = seconds => { const value=Math.floor(Number(seconds || 0)); return value >= 60 ? `${Math.floor(value / 60)}分${value % 60}秒` : `${value}秒`; };
+        const visible = sourceRows.slice(0,5);
+        const engagementLabel = engagement === null ? '\\' : duration(engagement);
+        trafficHost.innerHTML = `<div class="traffic-total text-small">报告期总计 <strong>${totalSessions}</strong> 次会话 <span>·</span> 平均互动 <strong>${engagementLabel}</strong> <span>·</span> 关键事件 <strong>${totalEvents}</strong></div><div class="traffic-head text-small"><span>会话来源</span><span>会话数</span><span>平均互动时长</span><span>关键事件</span></div>${visible.map(row => { const value = row.engagementSessions ? row.engagementSeconds / row.engagementSessions : null; return `<div class="traffic-row"><span>${sourceNames[row.sessionSource] || row.sessionSource}</span><span>${Number(row.sessions || 0)}</span><span>${value === null ? '\\' : duration(value)}</span><span>${Number(row.keyEvents || 0)}</span></div>`; }).join('')}<div class="traffic-note text-small">直接访问占 ${totalSessions ? (Number(sourceRows[0]?.sessions || 0) / totalSessions * 100).toFixed(1) : 0}%；关键事件按报告期汇总。</div>`;
+      }
+
+      const tip = root.querySelector('#seo-v2-tooltip');
+      root.querySelectorAll('[data-tip]').forEach(mark => {
+        mark.addEventListener('mouseenter', () => { tip.textContent=mark.dataset.tip; tip.style.opacity='1'; });
+        mark.addEventListener('mousemove', event => {
+          const box=root.getBoundingClientRect();
+          tip.style.left=Math.max(90,Math.min(event.clientX-box.left,box.width-90))+'px';
+          tip.style.top=(event.clientY-box.top-10)+'px';
+        });
+        mark.addEventListener('mouseleave', () => { tip.style.opacity='0'; });
+      });
+    })();
+  </script>
+  <style>
+    /* Near-full-width browser layout with a restrained breathing margin. */
+    html > body { padding:0 !important; }
+    #widget { width:100%; max-width:none !important; }
+    #seo-growth-dashboard-v2 {
+      width:calc(100% - clamp(32px,4vw,72px));
+      max-width:1800px;
+      margin:clamp(16px,2vw,30px) auto;
+      padding:0 0 clamp(56px,6vw,92px);
+    }
+    @media (max-width:720px) {
+      #seo-growth-dashboard-v2 {
+        width:calc(100% - 24px);
+        margin:12px auto;
+        padding:0 0 48px;
+      }
+    }
+  </style>
+  <style>
+    /* Compact professional dashboard presentation. */
+    html,
+    html > body {
+      background:var(--background) !important;
+      background-image:none !important;
+    }
+    html {
+      --background:#f6f7f9;
+      --foreground:#25242a;
+      --card:#ffffff;
+      --card-foreground:#25242a;
+      --primary:#4b2e73;
+      --primary-foreground:#ffffff;
+      --secondary:#f0eef3;
+      --secondary-foreground:#4b2e73;
+      --muted:#f0f1f3;
+      --muted-foreground:#77757f;
+      --accent:#f3f1f6;
+      --accent-foreground:#4b2e73;
+      --destructive:#c65555;
+      --border:#e1e2e6;
+      --input:#d8d9df;
+      --ring:#4b2e73;
+      /* Keep the exposure bars visually distinct from the purple click line. */
+      --viz-series-1:#4f9ff6;
+      --viz-series-2:#4b2e73;
+      --viz-series-3:#77757f;
+      --viz-series-4:#c3c1c8;
+      --viz-series-5:#68666f;
+      --viz-series-6:#8a888f;
+    }
+    #seo-growth-dashboard-v2 {
+      display:flex;
+      flex-direction:column;
+      color:#25242a;
+      font-weight:400;
+    }
+    #seo-growth-dashboard-v2 .dashboard-topbar { order:1; display:flex; align-items:center; justify-content:space-between; gap:28px; min-height:82px; padding:14px 0; border-bottom:1px solid #d9dae0; }
+    #seo-growth-dashboard-v2 .topbar-brand { min-width:230px; }
+    #seo-growth-dashboard-v2 .topbar-brand h1 { margin:0; color:#4b2e73; font-size:clamp(22px,2vw,30px); font-weight:500; letter-spacing:-.025em; line-height:1.15; }
+    #seo-growth-dashboard-v2 .topbar-brand p { margin:5px 0 0; color:#77757f; font-size:12px; }
+    #seo-growth-dashboard-v2 .dashboard-filter-bar { margin:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; backdrop-filter:none; }
+    #seo-growth-dashboard-v2 .seo-toolbar .viz-controls { display:grid; grid-template-columns:170px minmax(250px,340px); gap:12px; max-width:none; }
+    #seo-growth-dashboard-v2 .form-label { color:#77757f; font-size:11px; font-weight:500; }
+    #seo-growth-dashboard-v2 .form-control,
+    #seo-growth-dashboard-v2 .form-select { min-height:38px; margin-top:4px; border:1px solid #d8d9df; border-radius:6px; color:#25242a; background:#fff; box-shadow:none; }
+    #seo-growth-dashboard-v2 .tabs { display:none !important; }
+    #seo-growth-dashboard-v2 .executive-brief { order:2; display:block; margin:0; padding:20px 0 22px; border:0; border-bottom:1px solid #e1e2e6; border-radius:0; background:transparent; box-shadow:none; }
+    #seo-growth-dashboard-v2 .executive-brief h2 { margin:0 0 7px; color:#4b2e73; font-size:18px; font-weight:500; }
+    #seo-growth-dashboard-v2 .executive-brief p { margin:0; color:#5f5d66; font-size:14px; line-height:1.7; }
+    #seo-growth-dashboard-v2 .summary-primary { color:#4b2e73; font-weight:500; }
+    #seo-growth-dashboard-v2 .summary-up,
+    #seo-growth-dashboard-v2 .trend-up { color:#2f7d59; font-weight:500; }
+    #seo-growth-dashboard-v2 .summary-down,
+    #seo-growth-dashboard-v2 .trend-down { color:#c65555; font-weight:500; }
+    #seo-growth-dashboard-v2 .trend-flat { color:#77757f; font-weight:500; }
+    #seo-growth-dashboard-v2 [data-panel="google-seo"] { order:3; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] { order:4; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid { order:5; }
+    #seo-growth-dashboard-v2 [data-panel="plan"] { order:6; }
+    #seo-growth-dashboard-v2 .recommendation-panel { order:7; }
+    #seo-growth-dashboard-v2 .dashboard-footer { order:8; display:grid; gap:4px; margin-top:30px; padding:18px 0 0; border-top:1px solid #d9dae0; color:#8c8a92; font-size:11px; }
+    #seo-growth-dashboard-v2 .panel { margin-top:0; padding:28px 0 34px; border:0; border-bottom:1px solid #e1e2e6; }
+    #seo-growth-dashboard-v2 .apple-section-heading { display:block; margin-bottom:18px; }
+    #seo-growth-dashboard-v2 .apple-section-index { display:none; }
+    #seo-growth-dashboard-v2 .apple-section-heading h2 { margin:0; color:#4b2e73; font-size:24px; font-weight:500; letter-spacing:-.02em; line-height:1.2; }
+    #seo-growth-dashboard-v2 .apple-section-heading p { margin:5px 0 0; color:#77757f; font-size:12px; }
+    #seo-growth-dashboard-v2 .viz-grid.metrics { grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
+    #seo-growth-dashboard-v2 .metrics .viz-stat { position:relative; min-height:142px; padding:15px 16px; overflow:hidden; border:1px solid #e1e2e6; border-radius:8px; background:#fff; box-shadow:none; }
+    #seo-growth-dashboard-v2 .metrics .viz-stat:first-child,
+    #seo-growth-dashboard-v2 .metrics .viz-stat:last-child { padding:15px 16px; border:1px solid #e1e2e6; }
+    #seo-growth-dashboard-v2 .viz-stat > div:first-child { color:#77757f; font-size:11px; font-weight:500; }
+    #seo-growth-dashboard-v2 .viz-stat-value,
+    #seo-growth-dashboard-v2 .metric-value { margin-top:10px; color:#25242a; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:clamp(27px,2.4vw,38px); font-weight:500; letter-spacing:-.035em; }
+    #seo-growth-dashboard-v2 .metric-foot { margin-top:6px; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
+    #seo-growth-dashboard-v2 .kpi-note { max-width:68%; margin-top:6px; color:#929099; }
+    #seo-growth-dashboard-v2 .kpi-spark { position:absolute; right:13px; bottom:13px; width:76px; height:26px; color:#4b2e73; opacity:.72; }
+    #seo-growth-dashboard-v2 .seo-inline-metrics { gap:0; margin:0 0 22px; padding:10px 0; border-top:1px solid #e1e2e6; border-bottom:1px solid #e1e2e6; }
+    #seo-growth-dashboard-v2 .seo-inline-metrics > div { padding:8px 14px; border:0; border-right:1px solid #e1e2e6; border-radius:0; background:transparent; }
+    #seo-growth-dashboard-v2 .seo-inline-metrics > div:last-child { border-right:0; }
+    #seo-growth-dashboard-v2 .seo-inline-value,
+    #seo-growth-dashboard-v2 .seo-quality-value,
+    #seo-growth-dashboard-v2 .funnel-value,
+    #seo-growth-dashboard-v2 .keyword-rank,
+    #seo-growth-dashboard-v2 .hvalue,
+    #seo-growth-dashboard-v2 .seo-data-row > :not(:first-child),
+    #seo-growth-dashboard-v2 .seo-month-row > :not(:first-child),
+    #seo-growth-dashboard-v2 .page-row > :not(:first-child) { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .analytics-card,
+    #seo-growth-dashboard-v2 .overview-grid > div,
+    #seo-growth-dashboard-v2 #google-seo-months,
+    #seo-growth-dashboard-v2 #google-seo-recommendations,
+    #seo-growth-dashboard-v2 .seo-deep-grid > section,
+    #seo-growth-dashboard-v2 .wide-analysis-grid .panel,
+    #seo-growth-dashboard-v2 [data-panel="plan"],
+    #seo-growth-dashboard-v2 .seo-quality-item,
+    #seo-growth-dashboard-v2 .phase { border:1px solid #e1e2e6; border-radius:8px; background:#fff; box-shadow:none; }
+    #seo-growth-dashboard-v2 .analytics-card,
+    #seo-growth-dashboard-v2 .overview-grid > div,
+    #seo-growth-dashboard-v2 .seo-deep-grid > section,
+    #seo-growth-dashboard-v2 .wide-analysis-grid .panel,
+    #seo-growth-dashboard-v2 [data-panel="plan"] { padding:20px; }
+    #seo-growth-dashboard-v2 .dashboard-chart-grid { gap:12px; margin-bottom:18px; }
+    #seo-growth-dashboard-v2 .chart-card-head { margin-bottom:10px; }
+    #seo-growth-dashboard-v2 .chart-card-head h3 { color:#4b2e73; font-size:16px; font-weight:500; }
+    #seo-growth-dashboard-v2 .chart-card-head > span,
+    #seo-growth-dashboard-v2 .viz-badge { color:#4b2e73; background:#f0eef3; }
+    #seo-growth-dashboard-v2 .source-track,
+    #seo-growth-dashboard-v2 .track,
+    #seo-growth-dashboard-v2 .htrack,
+    #seo-growth-dashboard-v2 .rank-track,
+    #seo-growth-dashboard-v2 .seo-channel-track { background:#ececef; }
+    #seo-growth-dashboard-v2 .source-track span { background:#4b2e73; }
+    #seo-growth-dashboard-v2 .fill,
+    #seo-growth-dashboard-v2 .hbar,
+    #seo-growth-dashboard-v2 .seo-channel-fill { background:#4b2e73; }
+    #seo-growth-dashboard-v2 .fill.click,
+    #seo-growth-dashboard-v2 .fill.event { background:#77757f; }
+    #seo-growth-dashboard-v2 .trend-value,
+    #seo-growth-dashboard-v2 .trend-click { fill:#4b2e73; }
+    #seo-growth-dashboard-v2 .trend-grid { stroke:#e1e2e6; }
+    #seo-growth-dashboard-v2 .seo-quality-grid { gap:12px; margin:14px 0 22px; }
+    #seo-growth-dashboard-v2 .seo-quality-item { min-height:0; padding:14px; }
+    #seo-growth-dashboard-v2 .seo-quality-item.organic { border-top:2px solid #4b2e73; }
+    #seo-growth-dashboard-v2 .seo-deep-grid,
+    #seo-growth-dashboard-v2 .wide-analysis-grid { gap:14px; }
+    #seo-growth-dashboard-v2 .rank,
+    #seo-growth-dashboard-v2 .apple-section-index { color:#4b2e73; background:#f0eef3; }
+    #seo-growth-dashboard-v2 .phase { border:1px solid #e1e2e6 !important; }
+    #seo-growth-dashboard-v2 .node { background:#4b2e73; box-shadow:0 0 0 4px #fff; }
+    #seo-growth-dashboard-v2 .tooltip { border:1px solid #d9dae0; border-radius:6px; color:#25242a; background:#fff; box-shadow:0 8px 24px rgb(37 36 42 / 8%); }
+    @media (max-width:980px) {
+      #seo-growth-dashboard-v2 .dashboard-topbar { align-items:flex-start; flex-direction:column; gap:12px; }
+      #seo-growth-dashboard-v2 .dashboard-filter-bar,
+      #seo-growth-dashboard-v2 .seo-toolbar .viz-controls { width:100%; }
+      #seo-growth-dashboard-v2 .seo-toolbar .viz-controls { grid-template-columns:180px minmax(220px,1fr); }
+      #seo-growth-dashboard-v2 .viz-grid.metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width:620px) {
+      #seo-growth-dashboard-v2 .seo-toolbar .viz-controls { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .viz-grid.metrics { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .seo-inline-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      #seo-growth-dashboard-v2 .seo-inline-metrics > div:nth-child(2) { border-right:0; }
+      #seo-growth-dashboard-v2 .seo-inline-metrics > div:nth-child(-n+2) { border-bottom:1px solid #e1e2e6; }
+    }
+  </style>
+  <style>
+    /* Readability, persistent controls, and denser summary layout. */
+    #seo-growth-dashboard-v2 { font-size:16px; }
+    #seo-growth-dashboard-v2 .text-small { font-size:13px; }
+    #seo-growth-dashboard-v2 .dashboard-topbar {
+      position:sticky;
+      top:0;
+      z-index:50;
+      min-height:90px;
+      margin:0 -12px;
+      padding:13px 12px;
+      background:rgb(246 247 249 / 96%);
+      box-shadow:0 8px 24px rgb(37 36 42 / 7%);
+      backdrop-filter:blur(14px);
+    }
+    #seo-growth-dashboard-v2 .topbar-brand h1 { font-size:clamp(26px,2.2vw,34px); }
+    #seo-growth-dashboard-v2 .topbar-brand p { font-size:14px; }
+    #seo-growth-dashboard-v2 .form-label { font-size:13px; }
+    #seo-growth-dashboard-v2 .form-control,
+    #seo-growth-dashboard-v2 .form-select { min-height:42px; font-size:14px; }
+    #seo-growth-dashboard-v2 .executive-brief h2 { font-size:21px; }
+    #seo-growth-dashboard-v2 .executive-brief p { font-size:16px; }
+    #seo-growth-dashboard-v2 .apple-section-heading h2 { font-size:28px; }
+    #seo-growth-dashboard-v2 .apple-section-heading p,
+    #seo-growth-dashboard-v2 .section-note { font-size:14px; }
+    #seo-growth-dashboard-v2 .viz-stat > div:first-child { font-size:13px; }
+    #seo-growth-dashboard-v2 .viz-stat-value,
+    #seo-growth-dashboard-v2 .metric-value { font-size:clamp(30px,2.6vw,42px); }
+    #seo-growth-dashboard-v2 .metric-foot,
+    #seo-growth-dashboard-v2 .kpi-note,
+    #seo-growth-dashboard-v2 .seo-inline-label,
+    #seo-growth-dashboard-v2 .seo-quality-note,
+    #seo-growth-dashboard-v2 .seo-channel-meta { font-size:13px; }
+    #seo-growth-dashboard-v2 .seo-inline-value,
+    #seo-growth-dashboard-v2 .seo-quality-value { font-size:18px; }
+    #seo-growth-dashboard-v2 .chart-card-head h3 { font-size:20px; }
+    #seo-growth-dashboard-v2 .chart-card-head p { font-size:14px; }
+    #seo-growth-dashboard-v2 .chart-card-head > span { font-size:13px; }
+    #seo-growth-dashboard-v2 .trend-axis,
+    #seo-growth-dashboard-v2 .trend-value,
+    #seo-growth-dashboard-v2 .trend-click { font-size:13px; }
+    #seo-growth-dashboard-v2 .seo-data-row,
+    #seo-growth-dashboard-v2 .seo-month-row,
+    #seo-growth-dashboard-v2 .page-row,
+    #seo-growth-dashboard-v2 .keyword-row,
+    #seo-growth-dashboard-v2 .source-row { font-size:14px; }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] {
+      display:grid !important;
+      grid-template-columns:minmax(0,1.18fr) minmax(360px,.82fr);
+      gap:10px 16px;
+      align-items:start;
+      margin-bottom:24px;
+    }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .dashboard-chart-grid { grid-column:1/-1; grid-row:1; }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(2) { grid-column:1; grid-row:2; margin:0; }
+    #seo-growth-dashboard-v2 #google-seo-months { grid-column:1; grid-row:3; padding:14px 16px; }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(4) { grid-column:2; grid-row:2; margin:0 !important; }
+    #seo-growth-dashboard-v2 #google-seo-quality { grid-column:2; grid-row:3; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:0; }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(6) { grid-column:1/-1; grid-row:4; margin:20px 0 0; }
+    #seo-growth-dashboard-v2 #google-seo-recommendations { grid-column:1/-1; grid-row:5; }
+    #seo-growth-dashboard-v2 .seo-month-row { padding:11px 4px; }
+    #seo-growth-dashboard-v2 .seo-quality-item { min-height:96px; padding:13px 14px; }
+    #seo-growth-dashboard-v2 .analytics-card { padding:18px 20px; }
+    #seo-growth-dashboard-v2 .overview-grid { grid-template-columns:1fr; }
+    #seo-growth-dashboard-v2 .recommendation-panel { margin-top:24px; }
+    #seo-growth-dashboard-v2 .recommendation-layout { display:grid; gap:18px; }
+    #seo-growth-dashboard-v2 .recommendation-priority { padding:0; border:0; background:transparent; }
+    #seo-growth-dashboard-v2 .recommendation-priority .section-head { margin-bottom:10px; }
+    #seo-growth-dashboard-v2 .recommendation-priority .priority { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    #seo-growth-dashboard-v2 .recommendation-priority .priority li { min-height:104px; padding:14px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
+    #seo-growth-dashboard-v2 .recommendation-panel #google-seo-recommendations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    #seo-growth-dashboard-v2 .recommendation-panel #google-seo-recommendations .recommendation-group { display:block; padding:14px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
+    #seo-growth-dashboard-v2 .recommendation-group-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    #seo-growth-dashboard-v2 .recommendation-group-head strong { color:var(--muted-foreground); font-size:13px; font-weight:500; }
+    #seo-growth-dashboard-v2 .recommendation-targets { display:grid; gap:5px; margin-top:10px; color:var(--muted-foreground); font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:12px; }
+    #seo-growth-dashboard-v2 .recommendation-targets span { overflow-wrap:anywhere; }
+    #seo-growth-dashboard-v2 [data-panel="pages"] { width:100%; max-width:1380px; justify-self:center; }
+    #seo-growth-dashboard-v2 [data-panel="pages"] .page-row { grid-template-columns:minmax(220px,2fr) repeat(4,92px) minmax(140px,1fr); gap:8px; }
+    #seo-growth-dashboard-v2 [data-panel="pages"] .page-list,
+    #seo-growth-dashboard-v2 [data-panel="pages"] .chart-caption { max-width:1280px; }
+    #seo-growth-dashboard-v2 .seo-data-row { grid-template-columns:minmax(220px,1.8fr) repeat(4,82px) auto; gap:8px; }
+    #seo-growth-dashboard-v2 .seo-channel-row { grid-template-columns:120px minmax(180px,1fr) 64px 170px; gap:8px; }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 .recommendation-priority .priority,
+      #seo-growth-dashboard-v2 .recommendation-panel #google-seo-recommendations { grid-template-columns:1fr; }
+    }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > *,
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .dashboard-chart-grid,
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(2),
+      #seo-growth-dashboard-v2 #google-seo-months,
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(4),
+      #seo-growth-dashboard-v2 #google-seo-quality,
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(6),
+      #seo-growth-dashboard-v2 #google-seo-recommendations { grid-column:1; grid-row:auto; }
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(4),
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(6) { margin-top:18px !important; }
+    }
+    @media (max-width:620px) {
+      #seo-growth-dashboard-v2 { font-size:15px; }
+      #seo-growth-dashboard-v2 .dashboard-topbar { position:sticky; min-height:0; }
+      #seo-growth-dashboard-v2 #google-seo-quality { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .recommendation-panel #google-seo-recommendations { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 [data-panel="pages"] .page-row { grid-template-columns:1fr auto; }
+      #seo-growth-dashboard-v2 .seo-data-row { grid-template-columns:minmax(0,1fr) repeat(2,58px) auto; }
+      #seo-growth-dashboard-v2 .seo-channel-row { grid-template-columns:90px minmax(70px,1fr) 52px; }
+    }
+  </style>
+  <style>
+    /* Balanced comparison cards and compact detail tables. */
+    #seo-growth-dashboard-v2 .dashboard-chart-grid {
+      grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+      align-items:stretch;
+    }
+    #seo-growth-dashboard-v2 .dashboard-chart-grid .analytics-card { display:flex; flex-direction:column; min-height:0; }
+    #seo-growth-dashboard-v2 #google-seo-trend-chart { display:flex; align-items:center; flex:1; }
+    #seo-growth-dashboard-v2 #google-seo-trend-chart svg { width:100%; max-height:320px; }
+    #seo-growth-dashboard-v2 #google-seo-source-chart { display:flex; flex:1; flex-direction:column; justify-content:center; }
+    #seo-growth-dashboard-v2 #google-seo-source-chart .source-row { padding:13px 0; }
+    #seo-growth-dashboard-v2 .seo-deep-grid { grid-template-columns:minmax(0,1fr) minmax(0,1.12fr); align-items:stretch; }
+    #seo-growth-dashboard-v2 .seo-deep-grid > section { height:100%; }
+    #seo-growth-dashboard-v2 .seo-data-row { min-height:58px; padding:8px 4px; }
+    #seo-growth-dashboard-v2 .seo-name { min-width:0; }
+    #seo-growth-dashboard-v2 .seo-name-text {
+      display:-webkit-box;
+      overflow:hidden;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      line-clamp:2;
+      overflow-wrap:anywhere;
+    }
+    #seo-growth-dashboard-v2 .seo-row-action {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      min-height:32px;
+      padding:6px 10px;
+      border:1px solid var(--border);
+      border-radius:6px;
+      color:var(--primary);
+      background:var(--secondary);
+      font-size:13px;
+      font-weight:500;
+      white-space:nowrap;
+      cursor:pointer;
+    }
+    #seo-growth-dashboard-v2 .seo-row-action:hover { background:var(--accent); }
+    #seo-growth-dashboard-v2 [data-panel="overview"] {
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+      align-items:stretch;
+    }
+    #seo-growth-dashboard-v2 [data-panel="overview"] > .apple-section-heading { grid-column:1/-1; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] > .metrics,
+    #seo-growth-dashboard-v2 [data-panel="overview"] > .overview-grid { display:contents; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .metrics .viz-stat,
+    #seo-growth-dashboard-v2 [data-panel="overview"] .overview-grid > div { min-height:174px; padding:14px 15px; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .overview-grid > div { display:flex; flex-direction:column; justify-content:center; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .section-head { margin-bottom:8px; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .funnel { gap:8px; padding-top:0; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .funnel-row { grid-template-columns:72px 1fr 54px; gap:8px; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .track { height:14px; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .conversion-path { gap:6px; margin:9px 0 0; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .viz-stat-value { margin-top:7px; font-size:clamp(28px,2.2vw,36px); }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .metric-foot { margin-top:4px; }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 .dashboard-chart-grid,
+      #seo-growth-dashboard-v2 .seo-deep-grid { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 [data-panel="overview"] { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width:620px) {
+      #seo-growth-dashboard-v2 [data-panel="overview"] { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .seo-row-action { min-height:30px; padding:5px 8px; }
+    }
+  </style>
+  <style>
+    /* Compact analysis workspace: one keyword column with aligned supporting panels. */
+    #seo-growth-dashboard-v2 .wide-analysis-grid {
+      grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+      grid-template-rows:auto auto auto;
+      gap:14px;
+      align-items:stretch;
+    }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="search"] {
+      grid-column:1;
+      grid-row:1 / 4;
+      height:100%;
+    }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="pages"] {
+      grid-column:2;
+      grid-row:1;
+      width:auto;
+      max-width:none;
+      justify-self:stretch;
+    }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="channels"] { grid-column:2; grid-row:2; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] { grid-column:2; grid-row:3; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid .panel { height:100%; padding:18px 20px; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid [data-panel="channels"] .chart,
+    #seo-growth-dashboard-v2 .wide-analysis-grid [data-panel="markets"] .chart { min-height:0; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid .hrow { padding:7px 0; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid .hchart { display:grid; gap:2px; }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 .wide-analysis-grid { grid-template-columns:1fr; grid-template-rows:auto; }
+      #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="search"],
+      #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="pages"],
+      #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="channels"],
+      #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] { grid-column:1; grid-row:auto; height:auto; }
+    }
+  </style>
+  <style>
+    /* Row-level alignment for keyword/page details and a denser right stack. */
+    #seo-growth-dashboard-v2 .seo-deep-grid {
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      align-items:stretch;
+    }
+    #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="keywords"],
+    #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="seo-pages"] {
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+    #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="keywords"] .seo-table,
+    #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="seo-pages"] .seo-table {
+      display:grid;
+      grid-template-rows:42px;
+      grid-auto-rows:62px;
+      flex:none;
+    }
+    #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="keywords"] .seo-data-row,
+    #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="seo-pages"] .seo-data-row {
+      min-height:0;
+      height:auto;
+      overflow:hidden;
+    }
+    #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="keywords"] .seo-data-row.header,
+    #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="seo-pages"] .seo-data-row.header { min-height:42px; }
+    #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="keywords"] .seo-detail,
+    #seo-growth-dashboard-v2 .seo-deep-grid > [data-seo-panel="seo-pages"] .seo-detail { flex:none; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="pages"] .page-row { padding:6px 4px; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="pages"] .apple-section-heading,
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="channels"] .apple-section-heading,
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] .apple-section-heading { margin-bottom:8px; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="pages"] .section-head,
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="channels"] .section-head,
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] .section-head { margin-bottom:6px; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="channels"] .hrow,
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] .hrow { padding:4px 0; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="channels"] .chart-caption,
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] .chart-caption { margin-top:6px; }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 .seo-deep-grid { grid-template-columns:1fr; }
+    }
+  </style>
+  <style>
+    /* Consistent breathing room between major dashboard sections. */
+    #seo-growth-dashboard-v2 [data-panel="google-seo"],
+    #seo-growth-dashboard-v2 [data-panel="overview"],
+    #seo-growth-dashboard-v2 .wide-analysis-grid,
+    #seo-growth-dashboard-v2 [data-panel="plan"],
+    #seo-growth-dashboard-v2 .recommendation-panel { margin-top:30px; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] { margin-bottom:2px; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid { padding-top:0; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > .panel { margin-top:0; }
+    #seo-growth-dashboard-v2 [data-panel="plan"] { padding-top:24px; }
+    @media (max-width:760px) {
+      #seo-growth-dashboard-v2 [data-panel="google-seo"],
+      #seo-growth-dashboard-v2 [data-panel="overview"],
+      #seo-growth-dashboard-v2 .wide-analysis-grid,
+      #seo-growth-dashboard-v2 [data-panel="plan"],
+      #seo-growth-dashboard-v2 .recommendation-panel { margin-top:22px; }
+    }
+  </style>
+  <style>
+    #seo-growth-dashboard-v2 .seo-row-action.is-active {
+      color:var(--primary-foreground);
+      border-color:var(--primary);
+      background:var(--primary);
+    }
+  </style>
+  <style>
+    /* Consolidated reporting layout: summary first, no duplicate channel view. */
+    #seo-growth-dashboard-v2 [data-panel="overview"] { order:3; }
+    #seo-growth-dashboard-v2 [data-panel="google-seo"] { order:4; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid { order:5; }
+    #seo-growth-dashboard-v2 [data-panel="plan"] { order:6; }
+    #seo-growth-dashboard-v2 .recommendation-panel { display:none !important; }
+
+    #seo-growth-dashboard-v2 [data-panel="overview"] .metrics .viz-stat:nth-child(2) { order:-1; }
+
+    #seo-growth-dashboard-v2 .dashboard-chart-grid { grid-template-columns:minmax(0,1fr); }
+    #seo-growth-dashboard-v2 .dashboard-chart-grid .analytics-card:nth-child(2) { display:none; }
+    #seo-growth-dashboard-v2 #google-seo-trend-chart svg { max-height:300px; }
+
+    /* Explicit grids keep every heading directly above its numeric column. */
+    #seo-growth-dashboard-v2 [data-seo-panel="keywords"] .seo-data-row {
+      grid-template-columns:minmax(0,1fr) 72px 72px 72px 104px 106px;
+    }
+    #seo-growth-dashboard-v2 [data-seo-panel="seo-pages"] .seo-data-row {
+      grid-template-columns:minmax(0,1fr) 64px 64px 80px 64px 106px;
+    }
+    #seo-growth-dashboard-v2 [data-seo-panel="keywords"] .seo-data-row > :not(:first-child),
+    #seo-growth-dashboard-v2 [data-seo-panel="seo-pages"] .seo-data-row > :not(:first-child) { justify-self:end; text-align:right; }
+    #seo-growth-dashboard-v2 [data-seo-panel="keywords"] .seo-data-row > :last-child,
+    #seo-growth-dashboard-v2 [data-seo-panel="seo-pages"] .seo-data-row > :last-child { justify-self:end; }
+
+    /* Keep only the two complementary report-period analyses. */
+    #seo-growth-dashboard-v2 .wide-analysis-grid {
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+      grid-template-rows:minmax(0,1fr);
+      align-items:stretch;
+    }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="search"],
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="channels"] { display:none !important; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="pages"],
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] {
+      display:flex !important;
+      grid-row:1;
+      height:100%;
+      flex-direction:column;
+    }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="pages"] { grid-column:1; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] { grid-column:2; }
+    #seo-growth-dashboard-v2 [data-panel="pages"] .page-list,
+    #seo-growth-dashboard-v2 [data-panel="markets"] .chart { flex:1; }
+    #seo-growth-dashboard-v2 [data-panel="pages"] .page-row {
+      grid-template-columns:minmax(0,1.8fr) 52px 66px 64px 60px minmax(104px,.8fr);
+      gap:6px;
+      padding:7px 4px;
+    }
+    #seo-growth-dashboard-v2 .page-pager { display:flex; justify-content:flex-end; margin-top:10px; }
+    #seo-growth-dashboard-v2 .page-pager .btn { min-height:32px; font-size:13px; }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 .wide-analysis-grid { grid-template-columns:1fr; grid-template-rows:auto; }
+      #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="pages"],
+      #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] { grid-column:1; grid-row:auto; height:auto; }
+    }
+    @media (max-width:720px) {
+      #seo-growth-dashboard-v2 [data-seo-panel="keywords"] .seo-data-row,
+      #seo-growth-dashboard-v2 [data-seo-panel="seo-pages"] .seo-data-row { grid-template-columns:minmax(0,1fr) 58px 58px auto; }
+      #seo-growth-dashboard-v2 [data-panel="pages"] .page-row { grid-template-columns:minmax(0,1fr) 52px 62px; }
+      #seo-growth-dashboard-v2 [data-panel="pages"] .page-row > :nth-child(4),
+      #seo-growth-dashboard-v2 [data-panel="pages"] .page-row > :nth-child(6) { display:none; }
+    }
+  </style>
+  <script>
+    (() => {
+      const root = document.getElementById('seo-growth-dashboard-v2');
+      const data = JSON.parse(root.querySelector('#google-seo-data').textContent);
+      const host = root.querySelector('[data-panel="pages"] .page-list');
+      const caption = root.querySelector('[data-panel="pages"] .chart-caption');
+      if (!host || !caption) return;
+
+      const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+      const displayName = path => path === '/' ? '主页 /' : path.replace(/^\/wp-content\/uploads\//, 'PDF /');
+      const label = row => {
+        if (row.path === '/') return '核心承接页';
+        if (row.indexVerdict !== 'PASS') return '索引需关注';
+        if (Number(row.ctr || 0) < 1 && Number(row.impressions || 0) > 0) return '高曝光低点击';
+        return '可加强 CTA';
+      };
+      const aggregate = new Map();
+      (data.months || []).forEach(month => (month.pages || []).forEach(row => {
+        const key = row.path;
+        const record = aggregate.get(key) || { path:key, clicks:0, impressions:0, sessions:0, positionWeight:0, indexVerdict:row.indexVerdict };
+        const impressions = Number(row.impressions || 0);
+        record.clicks += Number(row.clicks || 0);
+        record.impressions += impressions;
+        record.sessions += Number(row.sessions || 0);
+        record.positionWeight += Number(row.position || 0) * impressions;
+        if (row.indexVerdict !== 'PASS') record.indexVerdict = row.indexVerdict;
+        aggregate.set(key, record);
+      }));
+      const rows = [...aggregate.values()].map(row => ({
+        ...row,
+        ctr: row.impressions ? row.clicks / row.impressions * 100 : 0,
+        position: row.impressions ? row.positionWeight / row.impressions : 0
+      })).sort((a,b) => b.clicks - a.clicks || b.impressions - a.impressions).slice(0,10);
+      let page = 0;
+      const size = 5;
+      const render = () => {
+        const start = page * size;
+        const visible = rows.slice(start,start + size);
+        host.innerHTML = `<div class="page-row header text-small" role="row"><div role="columnheader">着陆页</div><div class="num" role="columnheader">点击</div><div class="num" role="columnheader">展示</div><div class="num" role="columnheader">CTR</div><div class="num" role="columnheader">排名</div><div role="columnheader">判断</div></div>${visible.map(row => `<div class="page-row" role="row"><div>${escapeHtml(displayName(row.path))}</div><div class="num">${row.clicks}</div><div class="num">${row.impressions}</div><div class="num">${row.ctr.toFixed(2)}%</div><div class="num">${row.position.toFixed(2)}</div><div class="signal"><span class="dot${row.indexVerdict === 'PASS' ? '' : ' warn'}"></span>${label(row)}</div></div>`).join('')}`;
+        caption.textContent = `展示 ${start + 1}–${Math.min(start + size, rows.length)} / ${rows.length} 个报告期内自然搜索着陆页。`;
+        pagerButton.textContent = page === Math.ceil(rows.length / size) - 1 ? '返回上一页' : '下一页';
+      };
+      const pager = document.createElement('div');
+      pager.className = 'page-pager';
+      const pagerButton = document.createElement('button');
+      pagerButton.type = 'button';
+      pagerButton.className = 'btn';
+      pagerButton.addEventListener('click', () => { page = page === Math.ceil(rows.length / size) - 1 ? 0 : page + 1; render(); });
+      pager.append(pagerButton);
+      caption.after(pager);
+      render();
+    })();
+  </script>
+  <style>
+    /* Final compact pass: three overview metrics, paired trend/table, no keyword search field. */
+    #seo-growth-dashboard-v2 .seo-toolbar .viz-controls { grid-template-columns:170px; }
+    #seo-growth-dashboard-v2 label[for="google-seo-filter"] { display:none; }
+
+    #seo-growth-dashboard-v2 [data-panel="overview"] {
+      grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .metrics .viz-stat:nth-child(2) { order:initial; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .overview-grid { display:none !important; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .metrics .viz-stat { min-height:144px; }
+
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] {
+      display:grid !important;
+      grid-template-columns:minmax(0,1.16fr) minmax(380px,.84fr);
+      grid-template-rows:auto auto;
+      gap:10px 16px;
+      align-items:start;
+      margin-bottom:0;
+    }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .dashboard-chart-grid {
+      display:block;
+      grid-column:1;
+      grid-row:1 / 3;
+      margin:0;
+    }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(2) {
+      grid-column:2;
+      grid-row:1;
+      margin:0;
+      padding-top:2px;
+    }
+    #seo-growth-dashboard-v2 #google-seo-months {
+      grid-column:2;
+      grid-row:2;
+      margin:0;
+      padding:0 14px;
+      align-self:stretch;
+    }
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(4),
+    #seo-growth-dashboard-v2 #google-seo-quality { display:none !important; }
+    #seo-growth-dashboard-v2 #google-seo-trend-chart svg { max-height:270px; }
+
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] { grid-template-columns:1fr; grid-template-rows:auto; }
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .dashboard-chart-grid,
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(2),
+      #seo-growth-dashboard-v2 #google-seo-months { grid-column:1; grid-row:auto; }
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"] > .section-head:nth-child(2) { margin-top:16px; }
+    }
+    @media (max-width:720px) {
+      #seo-growth-dashboard-v2 [data-panel="overview"] { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .seo-toolbar .viz-controls { grid-template-columns:1fr; }
+    }
+  </style>
+  <style>
+    /* The upper trend/table pair and lower detail pair share the same column rhythm. */
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"],
+    #seo-growth-dashboard-v2 .seo-deep-grid {
+      grid-template-columns:minmax(0,1.16fr) minmax(380px,.84fr);
+      column-gap:16px;
+    }
+    #seo-growth-dashboard-v2 .seo-deep-grid { align-items:stretch; }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 [data-seo-panel="summary"],
+      #seo-growth-dashboard-v2 .seo-deep-grid { grid-template-columns:1fr; }
+    }
+  </style>
+  <style>
+    /* GSC tables expose the same selected columns as the source reports. */
+    #seo-growth-dashboard-v2 [data-panel="overview"] { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    #seo-growth-dashboard-v2 [data-panel="overview"] .metrics .viz-stat { min-height:144px; }
+    #seo-growth-dashboard-v2 [data-seo-panel="seo-pages"] .seo-table {
+      grid-template-rows:42px 42px;
+      grid-auto-rows:58px;
+    }
+    #seo-growth-dashboard-v2 .seo-total-row {
+      color:var(--muted-foreground);
+      background:var(--secondary);
+      font-weight:500;
+    }
+    #seo-growth-dashboard-v2 .seo-total-row > :not(:first-child) { font-variant-numeric:tabular-nums; }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 [data-panel="overview"] { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+  </style>
+  <style>
+    /* Traffic acquisition replaces the retired landing-page conversion section. */
+    #seo-growth-dashboard-v2 [data-panel="pages"],
+    #seo-growth-dashboard-v2 [data-view="pages"] { display:none !important; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid {
+      grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+      grid-template-rows:minmax(0,1fr);
+    }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="channels"] {
+      display:flex !important;
+      grid-column:1;
+      grid-row:1;
+      height:100%;
+      flex-direction:column;
+    }
+    #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] {
+      display:flex !important;
+      grid-column:2;
+      grid-row:1;
+      height:100%;
+      flex-direction:column;
+    }
+    #seo-growth-dashboard-v2 #traffic-acquisition-summary { display:grid; gap:0; }
+    #seo-growth-dashboard-v2 .traffic-total { padding:8px 0 12px; color:var(--muted-foreground); border-bottom:1px solid var(--border); }
+    #seo-growth-dashboard-v2 .traffic-total strong { color:var(--foreground); font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-weight:500; }
+    #seo-growth-dashboard-v2 .traffic-total span { margin:0 6px; }
+    #seo-growth-dashboard-v2 .traffic-head,
+    #seo-growth-dashboard-v2 .traffic-row { display:grid; grid-template-columns:minmax(0,1.3fr) 70px 118px 72px; gap:8px; align-items:center; }
+    #seo-growth-dashboard-v2 .traffic-head { padding:11px 0 7px; color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .traffic-row { padding:8px 0; border-top:1px solid var(--border); }
+    #seo-growth-dashboard-v2 .traffic-row > :not(:first-child) { text-align:right; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .traffic-note { margin-top:11px; color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hsecondary { min-width:142px; }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 .wide-analysis-grid { grid-template-columns:1fr; grid-template-rows:auto; }
+      #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="channels"],
+      #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] { grid-column:1; grid-row:auto; height:auto; }
+    }
+    @media (max-width:620px) {
+      #seo-growth-dashboard-v2 .traffic-head,
+      #seo-growth-dashboard-v2 .traffic-row { grid-template-columns:minmax(0,1fr) 48px 86px 54px; gap:5px; }
+      #seo-growth-dashboard-v2 .traffic-head { font-size:11px; }
+    }
+  </style>
+  <style>
+    /* Report-period blocks lead; only the final Intelligence section follows the month selector. */
+    #seo-growth-dashboard-v2 .dashboard-filter-bar .form-label:has(#google-seo-filter) { display:none; }
+    #seo-growth-dashboard-v2 .executive-brief { order:2; }
+    #seo-growth-dashboard-v2 [data-panel="overview"] { order:3; }
+    #seo-growth-dashboard-v2 #report-period-trends { order:4; margin-top:30px; }
+    #seo-growth-dashboard-v2 #report-period-flow { order:5; margin-top:14px; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid { order:6; margin-top:14px; }
+    #seo-growth-dashboard-v2 [data-panel="google-seo"] { order:7; margin-top:34px; }
+    #seo-growth-dashboard-v2 [data-panel="strategy"] { order:8; }
+    #seo-growth-dashboard-v2 [data-panel="plan"] { order:9; }
+    #seo-growth-dashboard-v2 .dashboard-footer { order:10; }
+
+    #seo-growth-dashboard-v2 .seo-subtabs,
+    #seo-growth-dashboard-v2 [data-seo-panel="summary"] { display:none !important; }
+    /* The trend card is now the sole child of its column: do not reserve a hidden chart track. */
+    #seo-growth-dashboard-v2 #report-period-trends .dashboard-chart-grid { grid-template-columns:minmax(0,1fr); }
+    #seo-growth-dashboard-v2 #report-period-trends .dashboard-chart-grid .analytics-card:nth-child(2) { display:none; }
+    #seo-growth-dashboard-v2 #report-period-trends .dashboard-chart-grid .analytics-card:first-child { grid-column:1; }
+    #seo-growth-dashboard-v2 #report-period-trends-content { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 14px; }
+    #seo-growth-dashboard-v2 #report-period-trends-content .dashboard-chart-grid { grid-column:1; grid-row:1 / 3; margin:0; }
+    #seo-growth-dashboard-v2 #report-period-trends-content > .section-head { grid-column:2; grid-row:1; margin:0; }
+    #seo-growth-dashboard-v2 #report-period-trends-content > #google-seo-months { grid-column:2; grid-row:2; margin:0; padding:0 14px; border:1px solid var(--border); border-radius:8px; background:#fff; }
+
+    #seo-growth-dashboard-v2 #report-period-flow > [data-seo-panel="seo-channels"] { display:block !important; padding:20px; border:1px solid var(--border); border-radius:8px; background:#fff; }
+    #seo-growth-dashboard-v2 #report-period-flow .section-head { margin-bottom:12px; }
+    #seo-growth-dashboard-v2 [data-panel="google-seo"] .apple-section-heading { margin-bottom:16px; }
+    #seo-growth-dashboard-v2 [data-panel="google-seo"] > .metrics { margin-bottom:16px; }
+    #seo-growth-dashboard-v2 [data-panel="google-seo"] .seo-deep-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    #seo-growth-dashboard-v2 [data-panel="google-seo"] [data-seo-panel="keywords"],
+    #seo-growth-dashboard-v2 [data-panel="google-seo"] [data-seo-panel="seo-pages"] { display:flex !important; }
+    #seo-growth-dashboard-v2 .wide-analysis-grid { grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:14px; }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 #report-period-trends-content,
+      #seo-growth-dashboard-v2 #report-period-trends .dashboard-chart-grid,
+      #seo-growth-dashboard-v2 [data-panel="google-seo"] .seo-deep-grid { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 #report-period-trends-content .dashboard-chart-grid,
+      #seo-growth-dashboard-v2 #report-period-trends-content > .section-head,
+      #seo-growth-dashboard-v2 #report-period-trends-content > #google-seo-months { grid-column:1; grid-row:auto; }
+    }
+  </style>
+  <style>
+    /* Numeric table headers use the exact same grid and alignment as their data cells. */
+    #seo-growth-dashboard-v2 .traffic-head > :not(:first-child) { text-align:right; }
+    #seo-growth-dashboard-v2 .traffic-head > :not(:first-child),
+    #seo-growth-dashboard-v2 .traffic-row > :not(:first-child) { font-variant-numeric:tabular-nums; }
+
+    /* Markets: one impression bar plus two non-duplicated metric columns. */
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hchart { gap:2px; }
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head,
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hrow { display:grid; grid-template-columns:86px minmax(0,1fr) 88px 56px; gap:10px; align-items:center; }
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head { padding:0 0 6px; color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head > :nth-child(3),
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head > :nth-child(4),
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hvalue,
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hclicks { text-align:right; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hclicks { font-weight:500; }
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hsecondary { display:none; }
+
+    #seo-growth-dashboard-v2 .seo-channel-head,
+    #seo-growth-dashboard-v2 .seo-channel-row { display:grid; grid-template-columns:120px minmax(180px,1fr) 64px 170px; gap:8px; align-items:center; }
+    #seo-growth-dashboard-v2 .seo-channel-head { padding:0 0 7px; color:var(--muted-foreground); border-bottom:1px solid var(--border); }
+    #seo-growth-dashboard-v2 .seo-channel-head > :nth-child(3),
+    #seo-growth-dashboard-v2 .seo-channel-head > :nth-child(4) { text-align:right; }
+    #seo-growth-dashboard-v2 .seo-channel-meta { color:var(--foreground); font-variant-numeric:tabular-nums; }
+    @media (max-width:620px) {
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head,
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hrow { grid-template-columns:62px minmax(0,1fr) 62px 42px; gap:7px; }
+      #seo-growth-dashboard-v2 .seo-channel-head,
+      #seo-growth-dashboard-v2 .seo-channel-row { grid-template-columns:90px minmax(70px,1fr) 52px; }
+      #seo-growth-dashboard-v2 .seo-channel-head > :nth-child(4) { grid-column:2/-1; text-align:right; }
+    }
+  </style>
+  <style>
+    /* All compact report metrics: one-line headers centered over centered values. */
+    #seo-growth-dashboard-v2 .seo-channel-head,
+    #seo-growth-dashboard-v2 .seo-channel-row { grid-template-columns:120px minmax(150px,1fr) 112px 150px; }
+    #seo-growth-dashboard-v2 .seo-channel-head > :nth-child(3),
+    #seo-growth-dashboard-v2 .seo-channel-head > :nth-child(4),
+    #seo-growth-dashboard-v2 .seo-channel-row > :nth-child(3),
+    #seo-growth-dashboard-v2 .seo-channel-row > :nth-child(4),
+    #seo-growth-dashboard-v2 .traffic-head > :not(:first-child),
+    #seo-growth-dashboard-v2 .traffic-row > :not(:first-child),
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head > :nth-child(3),
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head > :nth-child(4),
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hvalue,
+    #seo-growth-dashboard-v2 [data-panel="markets"] .hclicks { text-align:center; white-space:nowrap; }
+    #seo-growth-dashboard-v2 .seo-channel-head > :nth-child(3),
+    #seo-growth-dashboard-v2 .seo-channel-head > :nth-child(4),
+    #seo-growth-dashboard-v2 .traffic-head > :not(:first-child),
+    #seo-growth-dashboard-v2 .traffic-row > :not(:first-child) { white-space:nowrap; }
+    #seo-growth-dashboard-v2 .traffic-head,
+    #seo-growth-dashboard-v2 .traffic-row { grid-template-columns:minmax(0,1.3fr) 76px 132px 78px; }
+    @media (max-width:620px) {
+      #seo-growth-dashboard-v2 .seo-channel-head,
+      #seo-growth-dashboard-v2 .seo-channel-row { grid-template-columns:78px minmax(60px,1fr) 94px 106px; gap:5px; }
+      #seo-growth-dashboard-v2 .seo-channel-head > :nth-child(4),
+      #seo-growth-dashboard-v2 .seo-channel-meta { grid-column:auto; margin-top:0; text-align:center; }
+    }
+  </style>
+  <style>
+    /* Monthly, keyword and page tables share centered numeric columns. */
+    #seo-growth-dashboard-v2 .seo-month-row > :not(:first-child),
+    #seo-growth-dashboard-v2 [data-seo-panel="keywords"] .seo-data-row > :nth-child(n+2):nth-child(-n+5),
+    #seo-growth-dashboard-v2 [data-seo-panel="seo-pages"] .seo-data-row > :nth-child(n+2):nth-child(-n+5) {
+      justify-self:stretch;
+      text-align:center;
+      white-space:nowrap;
+    }
+    #seo-growth-dashboard-v2 .seo-month-row.header > :not(:first-child),
+    #seo-growth-dashboard-v2 [data-seo-panel="keywords"] .seo-data-row.header > :nth-child(n+2):nth-child(-n+5),
+    #seo-growth-dashboard-v2 [data-seo-panel="seo-pages"] .seo-data-row.header > :nth-child(n+2):nth-child(-n+5) { font-family:inherit; }
+  </style>
+  <style>
+    /* Mobile: turn dense acquisition rows into labelled metric groups and keep market bars readable. */
+    @media (max-width:620px) {
+      #seo-growth-dashboard-v2 .wide-analysis-grid { grid-template-columns:minmax(0,1fr) !important; width:100%; }
+      #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="channels"],
+      #seo-growth-dashboard-v2 .wide-analysis-grid > [data-panel="markets"] { grid-column:1 !important; grid-row:auto !important; width:100%; min-width:0; padding:16px 14px; }
+      #seo-growth-dashboard-v2 [data-panel="channels"] .section-head,
+      #seo-growth-dashboard-v2 [data-panel="markets"] .section-head { align-items:flex-start; flex-direction:column; gap:4px; }
+      #seo-growth-dashboard-v2 .traffic-total { display:flex; flex-wrap:wrap; gap:4px 7px; align-items:baseline; font-size:12px; }
+      #seo-growth-dashboard-v2 .traffic-total span { display:none; }
+      #seo-growth-dashboard-v2 .traffic-head { display:none; }
+      #seo-growth-dashboard-v2 .traffic-row { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:12px 0; }
+      #seo-growth-dashboard-v2 .traffic-row > :first-child { grid-column:1/-1; color:var(--foreground); font-weight:500; text-align:left; }
+      #seo-growth-dashboard-v2 .traffic-row > :not(:first-child) { display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0; color:var(--foreground); font-size:14px; text-align:center !important; }
+      #seo-growth-dashboard-v2 .traffic-row > :not(:first-child)::before { color:var(--muted-foreground); font-family:var(--font-sans); font-size:10px; font-weight:500; line-height:1.2; }
+      #seo-growth-dashboard-v2 .traffic-row > :nth-child(2)::before { content:"GA4 会话数"; }
+      #seo-growth-dashboard-v2 .traffic-row > :nth-child(3)::before { content:"平均互动时长"; }
+      #seo-growth-dashboard-v2 .traffic-row > :nth-child(4)::before { content:"关键事件"; }
+      #seo-growth-dashboard-v2 .traffic-note { margin-top:10px; font-size:11px; line-height:1.5; }
+
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head,
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hrow { grid-template-columns:54px minmax(64px,1fr) 54px 38px; gap:6px; }
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head { padding:0 0 7px; font-size:10px; }
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head > :nth-child(1)::after { content:"市场"; }
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head > :nth-child(2)::after { content:"趋势"; }
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head > :nth-child(1),
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hmetric-head > :nth-child(2) { text-align:left; }
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hrow { min-height:34px; padding:5px 0; }
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hlabel { overflow:hidden; font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
+      #seo-growth-dashboard-v2 [data-panel="markets"] .htrack { min-width:0; height:12px; }
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hvalue,
+      #seo-growth-dashboard-v2 [data-panel="markets"] .hclicks { font-size:13px; }
+      #seo-growth-dashboard-v2 [data-panel="markets"] .chart-caption { margin-top:10px; font-size:11px; line-height:1.5; }
+    }
+  </style>
+  <style>
+    /* Final report-data alignment: four monthly KPIs, plus an event column in the channel table. */
+    #seo-growth-dashboard-v2 [data-panel="google-seo"] > .metrics {
+      display:grid !important;
+      grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+      gap:12px;
+    }
+    #seo-growth-dashboard-v2 .seo-channel-head,
+    #seo-growth-dashboard-v2 .seo-channel-row {
+      grid-template-columns:120px minmax(150px,1fr) 112px 150px 96px;
+    }
+    #seo-growth-dashboard-v2 .seo-channel-head > :nth-child(5),
+    #seo-growth-dashboard-v2 .seo-channel-row > :nth-child(5) {
+      text-align:center;
+      white-space:nowrap;
+      font-variant-numeric:tabular-nums;
+    }
+    #seo-growth-dashboard-v2 .seo-channel-total {
+      color:var(--muted-foreground);
+      font-weight:500;
+      background:var(--secondary);
+    }
+    #seo-growth-dashboard-v2 .seo-channel-total .seo-channel-meta { color:var(--muted-foreground); }
+    /* DataForSEO is a market-validation layer after the GSC performance table, never a mixed-source table. */
+    #seo-growth-dashboard-v2 .market-opportunity-card { margin-top:24px; padding:20px; border:1px solid #d9e2e7; border-radius:12px; background:#f8fafb; }
+    #seo-growth-dashboard-v2 .google-seo-source { display:inline-flex; align-items:center; min-height:24px; margin-top:8px; padding:3px 8px; border:1px solid #d7def2; border-radius:999px; color:#3f5987; background:#f5f8ff; font-size:11px; font-weight:700; letter-spacing:.02em; }
+    #seo-growth-dashboard-v2 .market-opportunity-card .section-head { align-items:flex-start; margin-bottom:14px; }
+    #seo-growth-dashboard-v2 .market-opportunity-eyebrow { margin-bottom:4px; color:#54717d; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    #seo-growth-dashboard-v2 .market-opportunity-period { margin-top:5px; color:#54717d; font-weight:650; line-height:1.45; }
+    #seo-growth-dashboard-v2 .market-opportunity-source { max-width:620px; margin-top:5px; color:var(--muted-foreground); line-height:1.5; }
+    #seo-growth-dashboard-v2 .market-opportunity-summary { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; color:#54717d; text-align:right; }
+    #seo-growth-dashboard-v2 .market-opportunity-summary span,
+    #seo-growth-dashboard-v2 .market-opportunity-competition { display:inline-flex; align-items:center; min-height:24px; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; line-height:1; letter-spacing:.02em; }
+    #seo-growth-dashboard-v2 .market-opportunity-summary span { border:1px solid #d9e2e7; background:#fff; }
+    #seo-growth-dashboard-v2 .market-opportunity-summary .is-collected { border-color:#b8d6cb; color:#26624d; background:#eef8f3; }
+    #seo-growth-dashboard-v2 .market-opportunity-list { border-top:1px solid #d9e2e7; }
+    #seo-growth-dashboard-v2 .market-opportunity-row { display:grid; grid-template-columns:minmax(220px,1.7fr) 94px 94px 122px 118px; gap:14px; align-items:center; padding:14px 0; border-bottom:1px solid #dfe6ea; }
+    #seo-growth-dashboard-v2 .market-opportunity-row.header { color:#647780; padding:10px 0; font-size:var(--text-sm); }
+    /* Shared market-validation type hierarchy for monthly and quarterly reports. */
+    #seo-growth-dashboard-v2 .market-opportunity-row.header { color:var(--foreground); font-weight:500; }
+    #seo-growth-dashboard-v2 .market-opportunity-row:not(.header) > :first-child { font-weight:600; }
+    #seo-growth-dashboard-v2 .market-opportunity-row:not(.header) > :first-child strong { font-weight:inherit; }
+    #seo-growth-dashboard-v2 .market-opportunity-row:not(.header) > :nth-child(2),
+    #seo-growth-dashboard-v2 .market-opportunity-row:not(.header) > :nth-child(3) { font-weight:400; }
+    #seo-growth-dashboard-v2 .market-opportunity-no-serp { font-weight:400; }
+    #seo-growth-dashboard-v2 .market-opportunity-row > :not(:first-child) { text-align:center; font-variant-numeric:tabular-nums; }
+    #seo-growth-dashboard-v2 .market-opportunity-row p { margin:5px 0 0; color:var(--muted-foreground); font-size:12px; line-height:1.45; }
+    #seo-growth-dashboard-v2 .market-opportunity-value { font-variant-numeric:tabular-nums; white-space:nowrap; }
+    #seo-growth-dashboard-v2 .market-opportunity-competition { margin-top:5px; color:#4f5a60; background:#e8edf0; }
+    #seo-growth-dashboard-v2 .market-opportunity-competition.is-high { color:#7a4a18; background:#f7ead8; }
+    #seo-growth-dashboard-v2 .market-opportunity-competition.is-medium { color:#534768; background:#eee9f4; }
+    #seo-growth-dashboard-v2 .market-opportunity-competition.is-low { color:#24635b; background:#def0ec; }
+    #seo-growth-dashboard-v2 .market-opportunity-serp { width:100%; min-height:44px; white-space:nowrap; }
+    #seo-growth-dashboard-v2 .market-opportunity-no-serp { color:#9aa9b0; font-size:18px; }
+    #seo-growth-dashboard-v2 [data-seo-panel="keywords"] #google-seo-keyword-detail { position:relative; z-index:2; background:var(--card); }
+    @media (max-width:720px) {
+      #seo-growth-dashboard-v2 .market-opportunity-card { padding:16px; }
+      #seo-growth-dashboard-v2 .market-opportunity-row { grid-template-columns:1fr 1fr; gap:10px 12px; }
+      #seo-growth-dashboard-v2 .market-opportunity-row.header { display:none; }
+      #seo-growth-dashboard-v2 .market-opportunity-row > :first-child { grid-column:1/-1; }
+      #seo-growth-dashboard-v2 .market-opportunity-row > :last-child { text-align:right; }
+      #seo-growth-dashboard-v2 .market-opportunity-summary { justify-content:flex-start; margin-top:10px; text-align:left; }
+    }
+    @media (max-width:1100px) {
+      #seo-growth-dashboard-v2 [data-panel="google-seo"] > .metrics { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+    }
+    @media (max-width:620px) {
+      #seo-growth-dashboard-v2 [data-panel="google-seo"] > .metrics { grid-template-columns:1fr !important; }
+      #seo-growth-dashboard-v2 .seo-channel-head,
+      #seo-growth-dashboard-v2 .seo-channel-row { grid-template-columns:70px minmax(42px,1fr) 48px 82px 50px; gap:4px; }
+      #seo-growth-dashboard-v2 .seo-channel-head > :nth-child(4),
+      #seo-growth-dashboard-v2 .seo-channel-meta { grid-column:auto; margin-top:0; text-align:center; }
+    }
+    /* SEOAgent trial archive: a compact handoff from report evidence to the action plan. */
+    #seo-growth-dashboard-v2 [data-panel="strategy"] { display:block; padding:0; border:0; background:transparent; }
+    #seo-growth-dashboard-v2 [data-panel="strategy"][hidden] { display:none !important; }
+    #seo-growth-dashboard-v2 .strategy-band { padding:22px 24px 18px; border:1px solid #ddd7e8; border-left:3px solid var(--accent); border-radius:16px; background:linear-gradient(135deg,#fcfbfe 0%,#f7f5fb 100%); }
+    #seo-growth-dashboard-v2 .strategy-band-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+    #seo-growth-dashboard-v2 .strategy-band-heading h2 { margin:0; color:var(--foreground); font-size:22px; line-height:1.2; letter-spacing:-.02em; }
+    #seo-growth-dashboard-v2 .strategy-band-heading p { margin:5px 0 0; color:var(--muted-foreground); font-size:12px; }
+    #seo-growth-dashboard-v2 .strategy-summary { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; }
+    #seo-growth-dashboard-v2 .strategy-summary span { display:inline-flex; align-items:center; min-height:26px; padding:4px 9px; border:1px solid #ded8e9; border-radius:999px; color:#554c66; background:#fff; font-size:11px; font-weight:600; white-space:nowrap; }
+    #seo-growth-dashboard-v2 .strategy-disclosure { margin:10px 0 0; color:var(--muted-foreground); font-size:12px; line-height:1.55; }
+    #seo-growth-dashboard-v2 .strategy-section { margin-top:18px; padding-top:16px; border-top:1px solid #e2ddea; }
+    #seo-growth-dashboard-v2 .strategy-section .section-head { margin-bottom:10px; }
+    #seo-growth-dashboard-v2 .strategy-section .section-title { color:var(--foreground); font-size:14px; font-weight:700; }
+    #seo-growth-dashboard-v2 #strategy-priority-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    #seo-growth-dashboard-v2 #strategy-competitor-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    #seo-growth-dashboard-v2 .strategy-item { min-width:0; padding:12px; border:1px solid #e2ddea; border-radius:10px; background:#fff; }
+    #seo-growth-dashboard-v2 .strategy-item-top { display:flex; align-items:start; justify-content:space-between; gap:12px; }
+    #seo-growth-dashboard-v2 .strategy-item strong { color:var(--foreground); font-size:14px; line-height:1.4; overflow-wrap:anywhere; }
+    #seo-growth-dashboard-v2 .strategy-item p { margin:6px 0; color:var(--muted-foreground); font-size:12px; line-height:1.45; }
+    #seo-growth-dashboard-v2 .strategy-pill { flex:0 0 auto; padding:3px 8px; border-radius:999px; color:#69411c; background:#f7ead8; font-size:11px; font-weight:700; }
+    #seo-growth-dashboard-v2 .strategy-pill.muted { color:#55515b; background:var(--secondary); }
+    #seo-growth-dashboard-v2 .strategy-item-meta { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; color:var(--muted-foreground); font-size:12px; }
+    #seo-growth-dashboard-v2 .strategy-page-link { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-height:32px; padding:5px 10px; border:1px solid #bba8d6; border-radius:8px; color:#48266f; background:#f5f0fa; font-size:12px; font-weight:700; line-height:1; text-decoration:none; transition:background .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease; }
+    #seo-growth-dashboard-v2 .strategy-page-link:hover { border-color:#533087; color:#3f1f68; background:#ece3f8; box-shadow:0 2px 6px rgba(83,48,135,.13); }
+    #seo-growth-dashboard-v2 .strategy-page-link:focus-visible { outline:3px solid #b9a4df; outline-offset:2px; }
+    #seo-growth-dashboard-v2 .strategy-keyword-page-link { justify-self:start; }
+    #seo-growth-dashboard-v2 .strategy-keyword-row { display:grid; grid-template-columns:minmax(180px,1.6fr) 120px 150px minmax(100px,.7fr); gap:14px; align-items:center; padding:11px 0; border-top:1px solid var(--border); color:var(--muted-foreground); font-size:13px; }
+    #seo-growth-dashboard-v2 .strategy-keyword-row:first-child { border-top:0; padding-top:0; }
+    #seo-growth-dashboard-v2 .strategy-keyword-row strong { color:var(--foreground); }
+    #seo-growth-dashboard-v2 .strategy-empty { margin:0; color:var(--muted-foreground); font-size:13px; line-height:1.5; }
+    #seo-growth-dashboard-v2 .strategy-reference { margin-top:16px; border:1px solid #ded8e9; border-radius:10px; background:#fff; overflow:hidden; }
+    #seo-growth-dashboard-v2 .strategy-reference summary { display:flex; align-items:center; gap:10px; min-height:44px; padding:8px 12px; color:var(--foreground); cursor:pointer; font-size:13px; font-weight:700; list-style:none; transition:background .16s ease; }
+    #seo-growth-dashboard-v2 .strategy-reference summary:hover { background:#f8f5fc; }
+    #seo-growth-dashboard-v2 .strategy-reference summary::-webkit-details-marker { display:none; }
+    #seo-growth-dashboard-v2 .strategy-reference[open] summary { border-bottom:1px solid #e2ddea; background:#f8f5fc; }
+    #seo-growth-dashboard-v2 .strategy-reference summary:focus-visible { outline:3px solid #b9a4df; outline-offset:-3px; }
+    #seo-growth-dashboard-v2 .strategy-reference-title { min-width:0; }
+    #seo-growth-dashboard-v2 .strategy-reference-count { display:inline-flex; align-items:center; min-height:24px; padding:3px 8px; border-radius:999px; color:#5b5369; background:#f0edf5; font-weight:650; white-space:nowrap; }
+    #seo-growth-dashboard-v2 .strategy-reference-toggle { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-width:72px; min-height:30px; margin-left:auto; padding:4px 9px; border:1px solid #bba8d6; border-radius:7px; color:#48266f; background:#f5f0fa; font-size:12px; font-weight:700; line-height:1; white-space:nowrap; }
+    #seo-growth-dashboard-v2 .strategy-reference-close-label { display:none; }
+    #seo-growth-dashboard-v2 .strategy-reference[open] .strategy-reference-open-label { display:none; }
+    #seo-growth-dashboard-v2 .strategy-reference[open] .strategy-reference-close-label { display:inline; }
+    #seo-growth-dashboard-v2 .strategy-reference-chevron { display:inline-block; transition:transform .16s ease; }
+    #seo-growth-dashboard-v2 .strategy-reference[open] .strategy-reference-chevron { transform:rotate(180deg); }
+    #seo-growth-dashboard-v2 .strategy-reference-body { padding:12px; }
+    #seo-growth-dashboard-v2 .strategy-reference-note { margin-bottom:12px; color:var(--muted-foreground); }
+    #seo-growth-dashboard-v2 .strategy-action-bridge { margin:14px 0 0; padding-top:12px; border-top:1px dashed #d7d0e1; color:var(--muted-foreground); line-height:1.5; }
+    @media (max-width:780px) {
+      #seo-growth-dashboard-v2 .strategy-band { padding:18px 16px 14px; }
+      #seo-growth-dashboard-v2 .strategy-band-heading { display:block; }
+      #seo-growth-dashboard-v2 .strategy-summary { justify-content:flex-start; margin-top:12px; }
+      #seo-growth-dashboard-v2 #strategy-priority-list,
+      #seo-growth-dashboard-v2 #strategy-competitor-list { grid-template-columns:1fr; }
+      #seo-growth-dashboard-v2 .strategy-keyword-row { grid-template-columns:1fr 1fr; gap:8px 14px; }
+      #seo-growth-dashboard-v2 .strategy-reference summary { align-items:flex-start; }
+    }
+    /* v2.1: market validation is a standalone full-width Google SEO panel. */
+    #seo-growth-dashboard-v2 > .market-validation-panel[data-panel="google-seo"] {
+      width:100%;
+      margin-top:18px;
+      padding:22px;
+      border:1px solid #dbe4fb;
+      border-radius:20px;
+      background:linear-gradient(135deg,#fbfcff 0%,#f4f7ff 100%);
+      box-shadow:0 10px 28px rgb(45 89 198 / 7%);
+    }
+    #seo-growth-dashboard-v2 > .market-validation-panel .market-opportunity-card {
+      width:100%;
+      max-width:none;
+      margin:0;
+    }
+    #seo-growth-dashboard-v2 > .market-validation-panel .market-opportunity-serp-detail {
+      margin-top:16px;
+      background:var(--card);
+    }
+    @media (max-width:720px) {
+      #seo-growth-dashboard-v2 > .market-validation-panel[data-panel="google-seo"] {
+        margin-top:14px;
+        padding:16px 14px;
+        border-radius:16px;
+      }
+    }
+    @media (max-width: 360px) {
+      #seo-growth-dashboard-v2 #google-seo-channels .seo-channel-head,
+      #seo-growth-dashboard-v2 #google-seo-channels .seo-channel-row {
+        grid-template-columns:minmax(0,1fr) 52px 64px;
+        gap:6px;
+      }
+      #seo-growth-dashboard-v2 #google-seo-channels .seo-channel-head > :nth-child(3) { grid-column:2; }
+      #seo-growth-dashboard-v2 #google-seo-channels .seo-channel-head > :nth-child(4) { grid-column:3; }
+      #seo-growth-dashboard-v2 #google-seo-channels .seo-channel-head > :nth-child(5),
+      #seo-growth-dashboard-v2 #google-seo-channels .seo-channel-row > :nth-child(5) {
+        grid-column:2 / -1;
+        grid-row:2;
+        text-align:center;
+      }
+      #seo-growth-dashboard-v2 #google-seo-channels .seo-channel-row > :nth-child(4) {
+        grid-column:1;
+        grid-row:2;
+        text-align:left;
+      }
+    }
+  </style>
+</div>
