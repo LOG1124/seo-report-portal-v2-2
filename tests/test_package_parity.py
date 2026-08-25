@@ -15,7 +15,13 @@ sys.path.insert(0, str(PACKAGE / "scripts"))
 from check_package_parity import check_package_parity  # noqa: E402
 
 
-FILES = ("SKILL.md", "assets/dashboard-template.html", "scripts/generate_dashboard_report.py", "agents/openai.yaml")
+FILES = (
+    "SKILL.md",
+    "assets/dashboard-template.html",
+    "scripts/generate_dashboard_report.py",
+    "scripts/publish_oss_report.py",
+    "agents/openai.yaml",
+)
 
 
 class PackageParityTests(unittest.TestCase):

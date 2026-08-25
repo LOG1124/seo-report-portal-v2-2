@@ -46,13 +46,14 @@ python scripts/validate_report_artifact.py --report-dir <output/dashboards/domai
 ```
 
 8. Check the local HTML, summary, and internal `diagnostic.md`. Obtain explicit approval for this exact report before publishing.
-9. Publish only with `scripts/publish_oss_report.sh`: validate the three reviewed files, copy them to the approved SMB archive, compare SHA-256 values, upload from the SMB archive to OSS, and verify the public `index.html` SHA-256. The only supported public path is:
+9. Publish only with `scripts/publish_oss_report.py`: validate the three reviewed files, copy them to the approved SMB archive, compare SHA-256 values, upload from the SMB archive to OSS, and verify the public `index.html` SHA-256. Configure the SMB archive root for the local OS (macOS mount, Windows mapped drive, or Windows UNC path); never assume another teammate's mount path. The only supported public path is:
 
 ```text
 https://reports.jzyseo.com/reports/<client-slug>/<monthly|quarterly|yearly>/<period>/
 ```
 
 Read `references/team-first-run-guide.md` before a teammate's first end-to-end run. It covers Google access, optional providers, SMB, individual RAM credentials, ossutil, approval, and the required local-to-SMB-to-OSS order.
+On Windows, also read `references/windows-first-run.md` before configuring paths or running the publisher.
 
 9. Before replacing the v2 ZIP or global v2 installation, create a staged ZIP and require parity for `SKILL.md`, template, generator, and `agents/openai.yaml`:
 
@@ -64,6 +65,7 @@ python scripts/check_package_parity.py --source <seo-report-portal-v2-1-source> 
 
 - `references/team-usage-guide.md` — teammate setup and daily workflow.
 - `references/team-first-run-guide.md` — first-use checklist for the complete collection-to-public-link workflow.
+- `references/windows-first-run.md` — Windows paths, SMB mapping, Python, and publisher setup.
 - `references/third-party-data-guide.md` — provider scope, cost gate, archive rules, and dashboard meaning.
 - `references/seo-data-source-contract.json` — authoritative field ownership.
 - `assets/dataforseo-trial.example.json` — safe DataForSEO configuration example.

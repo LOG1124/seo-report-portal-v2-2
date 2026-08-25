@@ -1,57 +1,37 @@
 # 同事首次上手：从采集到在线报告链接
 
-本指南适用于 `seo-report-portal-v2-1`。每位同事都能完成完整流程：**本地 → SMB → OSS**，但不得跳过数据、付费或发布批准门禁。
+本指南适用于 `seo-report-portal-v2-1`。每位同事都能完成**本地 → SMB → OSS**，但不得跳过数据、付费或发布批准门禁。
+
+在 Windows 首次使用前，先阅读 [Windows 配置](windows-first-run.md)；不要把 macOS 的 `/Volumes/共享盘`、`.venv/bin/python` 或 `chmod` 命令照搬到 Windows。
 
 ## 管理员先完成
 
 1. 为同事提供客户的 GA4/GSC 只读服务账号访问。
 2. 如需第三方模块，通过密码管理器发放获批准的 DataForSEO 凭据和 SEOAgent Token。
 3. 让同事的独立 RAM 用户加入 `SEOReportPublishers` 用户组；该组应已绑定 `SEOReportPublisherPolicy`，且仅允许上传 `jzyseo-reports/reports/*`。
-4. 提供 SMB 公盘写入访问。默认挂载点是 `/Volumes/共享盘`，报告根目录是 `/Volumes/共享盘/seo-report-portal`。
+4. 提供 SMB 公盘写入访问，以及同事本机可用的归档路径：macOS 挂载路径、Windows 映射盘或 Windows UNC 路径。
 5. 通过密码管理器提供该同事独立的 RAM AccessKey ID、AccessKey Secret 和 OSS 地域。不要共享管理员或其他同事的 AccessKey。
 
 ## 同事首次配置
 
-### 1. 私密文件
+在自己的客户工作区创建 `private/` 和 `scripts/`，复制无密钥模板与跨平台发布器。命令因系统不同：macOS 可用 Shell；Windows 请按 [Windows 配置](windows-first-run.md) 使用 PowerShell 与 Python。
 
-在自己的客户工作区执行：
+只在本机填写 `private/dataforseo.env`、`private/ossutilconfig` 和 Google 服务账号 JSON。`private/oss.env` 指向本机 `ossutil`、`ossutilconfig` 和已连接的 SMB 归档根路径；不要填写或提交真实凭据到其他文件。
 
-```bash
-mkdir -p private scripts
-cp ~/.codex/skills/seo-report-portal-v2-1/assets/dataforseo.env.example private/dataforseo.env
-cp ~/.codex/skills/seo-report-portal-v2-1/assets/oss.env.example private/oss.env
-cp ~/.codex/skills/seo-report-portal-v2-1/assets/ossutilconfig.example private/ossutilconfig
-cp ~/.codex/skills/seo-report-portal-v2-1/scripts/publish_oss_report.sh scripts/publish_oss_report.sh
-chmod 600 private/dataforseo.env private/oss.env private/ossutilconfig
-chmod 700 scripts/publish_oss_report.sh
-```
-
-只在本机填写 `private/dataforseo.env`、`private/ossutilconfig` 和 Google 服务账号 JSON。`private/oss.env` 中应指向本机的 `ossutil` 和 `private/ossutilconfig`；不要填写或提交真实凭据到其他文件。
-
-使用官方 ossutil 为 macOS 安装可执行文件，并确认 `private/oss.env` 的 `OSSUTIL_BIN` 可运行。不要把 ossutil 配置文件或 AccessKey 放入 Skill 包。
-
-### 2. 无消费与无写入检查
+## 无消费与无写入检查
 
 1. 重启 Codex 后确认 `seoagent` MCP 显示正常；不要用真实查询测试。
-2. 确认 SMB 已挂载：`/Volumes/共享盘`。
-3. 生成本地报告并运行产物校验：
+2. 确认 `private/oss.env` 的 `OSS_ARCHIVE_ROOT` 是本机可访问的 SMB 路径。
+3. 生成本地报告并运行产物校验。macOS 可使用 `./.venv/bin/python`；Windows 使用 `.venv\\Scripts\\python.exe` 或 `py -3`：
 
-```bash
-./.venv/bin/python \
-  ~/.codex/skills/seo-report-portal-v2-1/scripts/validate_report_artifact.py \
-  --report-dir output/dashboards/<domain>/<type>/<period> \
-  --domain-root output/dashboards/<domain>
+```text
+python scripts/validate_report_artifact.py --report-dir <output/dashboards/domain/type/period> --domain-root <output/dashboards/domain>
 ```
 
-4. 只运行发布 dry-run；它不会写入 SMB 或 OSS：
+4. 只运行跨平台发布 dry-run；它不会写入 SMB 或 OSS：
 
-```bash
-./scripts/publish_oss_report.sh \
-  --local-report-dir output/dashboards/<domain>/<type>/<period> \
-  --client-slug <client-slug> \
-  --type <monthly|quarterly|yearly> \
-  --period <period> \
-  --dry-run
+```text
+python scripts/publish_oss_report.py --local-report-dir <output/dashboards/domain/type/period> --client-slug <client-slug> --type <monthly|quarterly|yearly> --period <period> --dry-run
 ```
 
 ## 每份报告的发布步骤
@@ -60,11 +40,11 @@ chmod 700 scripts/publish_oss_report.sh
 2. 如需 DataForSEO 或 SEOAgent，先获得该次请求的范围、费用上限和明确确认；归档必须匹配客户和月份。
 3. 生成报告并人工核对 `index.html`、`summary.md` 和内部 `diagnostic.md`。
 4. 获得这份报告的明确发布批准。
-5. 执行发布脚本。它会按以下顺序处理，任何一步失败即停止：
+5. 执行 `publish_oss_report.py`。它按以下顺序处理，任何一步失败即停止：
 
 ```text
 本地 index.html/dashboard-data.json/summary.md
-→ SMB /Volumes/共享盘/seo-report-portal/<client-slug>/<type>/<period>/
+→ 本机配置的 SMB <archive-root>/<client-slug>/<type>/<period>/
 → oss://jzyseo-reports/reports/<client-slug>/<type>/<period>/
 → https://reports.jzyseo.com/reports/<client-slug>/<type>/<period>/
 ```
@@ -77,6 +57,6 @@ chmod 700 scripts/publish_oss_report.sh
 ## 常见停止条件
 
 - `AccessDenied`：检查 RAM 用户是否已加入 `SEOReportPublishers`，以及用户组是否仍绑定 `SEOReportPublisherPolicy`。
-- 公盘未挂载：先挂载 `/Volumes/共享盘`，不要绕过 SMB 直接上传。
+- SMB 路径不存在：先连接或映射指定路径；不要把别人的 `/Volumes/共享盘` 当作本机路径，也不要绕过 SMB 直接上传。
 - 线上目录 HEAD 返回 404：这是 OSS 目录行为；以报告链接的 GET 结果和 SHA-256 为准。
 - 付费请求失败：停止并报告原始错误，不得自动重试。

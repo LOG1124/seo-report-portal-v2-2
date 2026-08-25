@@ -20,8 +20,10 @@ CANONICAL_FILES = (
     "assets/ossutilconfig.example",
     "assets/oss-report-publisher-policy.json",
     "scripts/generate_dashboard_report.py",
+    "scripts/publish_oss_report.py",
     "scripts/publish_oss_report.sh",
     "references/team-first-run-guide.md",
+    "references/windows-first-run.md",
     "agents/openai.yaml",
 )
 

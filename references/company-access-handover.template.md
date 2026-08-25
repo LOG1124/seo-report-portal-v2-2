@@ -11,7 +11,9 @@
 ## 团队工作区与发布
 
 - 私有工作区位置：
-- SMB 公盘地址与挂载点：
+- SMB 公盘地址：
+- macOS 挂载点：
+- Windows 映射盘或 UNC 路径：
 - SMB 写入权限负责人：
 - OSS Bucket：`jzyseo-reports`
 - OSS 报告前缀：`reports/`
@@ -42,5 +44,5 @@
 ## 应急处理
 
 - 凭据疑似泄露：立即在对应平台撤销或轮换，并审查共享仓库历史。
-- 发布异常：确认 SMB 已挂载且可写、RAM 用户属于 `SEOReportPublishers`、策略仍限制为 `jzyseo-reports/reports/*`，再保留 ossutil 原始输出。
+- 发布异常：确认本机配置的 SMB 路径存在且可写（不要假设 `/Volumes/共享盘`）、RAM 用户属于 `SEOReportPublishers`、策略仍限制为 `jzyseo-reports/reports/*`，再保留 ossutil 原始输出。
 - 数据异常：保留原始归档，记录问题，未经审批不得用替代值覆盖。
