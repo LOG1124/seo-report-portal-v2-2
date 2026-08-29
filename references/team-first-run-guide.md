@@ -1,6 +1,6 @@
 # 同事首次上手：从采集到在线报告链接
 
-本指南适用于 `seo-report-portal-v2-1`。每位同事都能完成**本地 → SMB → OSS**，但不得跳过数据、付费或发布批准门禁。
+本指南适用于 `seo-report-portal-v2-2`。每位同事都能完成**本地 → SMB → OSS**，但不得跳过数据、付费或发布批准门禁。
 
 在 Windows 首次使用前，先阅读 [Windows 配置](windows-first-run.md)；不要把 macOS 的 `/Volumes/共享盘`、`.venv/bin/python` 或 `chmod` 命令照搬到 Windows。
 
@@ -50,7 +50,7 @@ python scripts/publish_oss_report.py --local-report-dir <output/dashboards/domai
 ```
 
 6. 只有脚本报告 SMB 与本地 SHA-256 一致、线上 `index.html` SHA-256 一致且公开链接 GET 成功时，才能交付。
-7. 客户交付固定包含在线报告链接和文字总结。
+7. 客户交付固定包含在线报告链接和文字总结。文字总结必须逐字复制已审核 `summary.md` 的 `## 运营总结` 标题与编号正文；不得因任何人的要求改写、删减、重排、补充或替换。
 
 已有不同公盘版本时，脚本会停止。只有明确批准替换时才增加 `--replace-archive`；这会覆盖该报告周期的三个公盘文件并上传 OSS。
 

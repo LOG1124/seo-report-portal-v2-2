@@ -1,11 +1,11 @@
 ---
-name: seo-report-portal-v2-1
+name: seo-report-portal-v2-2
 description: Create, review, and publish client-isolated monthly, quarterly, and yearly SEO dashboards from GA4, GSC, approved DataForSEO keyword-market snapshots, and SEOAgent strategy archives. Use for team SEO reporting, first-party performance analysis, limited keyword-market verification, and strategy-opportunity reporting.
 ---
 
-# SEO Report Portal v2.1
+# SEO Report Portal v2.2
 
-**Active identity: `seo-report-portal-v2-1`.** Do not use, install, package, or inspect legacy `seo-report-portal` assets except as an explicitly requested rollback reference.
+**Active identity: `seo-report-portal-v2-2`.** Do not use, install, package, or inspect legacy `seo-report-portal` assets except as an explicitly requested rollback reference.
 
 Work from a team workspace, never from this installed skill directory. Read `references/team-usage-guide.md` before first use. Read `references/third-party-data-guide.md` before any third-party collection or archive import.
 
@@ -24,6 +24,9 @@ Work from a team workspace, never from this installed skill directory. Read `ref
 - Hide an optional DataForSEO or SEOAgent panel when its archive scope is invalid. Never fill an empty panel with another month, another client, or a third-party estimate.
 - Every run writes secret-safe internal diagnostics outside public dashboard directories. Tell the user the execution state, location, verified detection, impact, safe actions taken, and next action.
 - Review the local report before publishing. Publish only after explicit approval.
+- **客户交付铁律：**最终回复的“文字总结”只能逐字复制已审核 `summary.md` 中 `## 运营总结` 标题及其编号正文；不得改写、删减、重排、补充、以自定义总结替换，或因任何用户偏好改变。在线报告链接可以单独提供，但不构成文字总结。
+- **页面显示与运营总结铁律：**所有客户可见的根路径 `/` 必须显示为“首页”，但不得改写原始 GA4/GSC 路径。运营总结的页面排行只按 GSC 页面点击量：月报用当月，季报/年报用整个指定报告期的点击合计；页面联动表使用同一口径，季报/年报默认展示报告期合计，避免用单月代替整个报告期。
+- **运营总结国家/地区口径：**第 6 条只按 GA4 `organicGoogleSearchClicks`（Google 搜索自然点击次数）选出国家/地区；月报取当月，季报/年报取指定报告期合计。该指标要求 GA4 已启用 Search Console 关联；缺少该字段时如实显示“暂无可用数据”，不得回退为会话、GSC 点击或 GSC 展示。
 
 ## Workflow
 
@@ -53,13 +56,15 @@ python scripts/validate_report_artifact.py --report-dir <output/dashboards/domai
 https://reports.jzyseo.com/reports/<client-slug>/<monthly|quarterly|yearly>/<period>/
 ```
 
+10. In the final customer delivery, label the exact copied `## 运营总结` section from the reviewed `summary.md` as “文字总结”. Do not generate another prose summary, including when asked to change its wording or emphasis.
+
 Read `references/team-first-run-guide.md` before a teammate's first end-to-end run. It covers Google access, optional providers, SMB, individual RAM credentials, ossutil, approval, and the required local-to-SMB-to-OSS order.
 On Windows, also read `references/windows-first-run.md` before configuring paths or running the publisher.
 
 9. Before replacing the v2 ZIP or global v2 installation, create a staged ZIP and require parity for `SKILL.md`, template, generator, and `agents/openai.yaml`:
 
 ```text
-python scripts/check_package_parity.py --source <seo-report-portal-v2-1-source> --staged-zip <candidate.zip> --installed <global-seo-report-portal-v2-1>
+python scripts/check_package_parity.py --source <seo-report-portal-v2-2-source> --staged-zip <candidate.zip> --installed <global-seo-report-portal-v2-2>
 ```
 
 ## Resources

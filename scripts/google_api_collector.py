@@ -195,6 +195,7 @@ def collect_ga4(
     channels = _ga4_report(client, property_id, start, end, ["sessionDefaultChannelGroup"], quality_metrics, row_limit)
     sources = _ga4_report(client, property_id, start, end, ["sessionSource"], quality_metrics, row_limit)
     countries = _ga4_report(client, property_id, start, end, ["country"], ["sessions", "totalUsers", "engagedSessions"], row_limit)
+    organic_search_countries = _ga4_report(client, property_id, start, end, ["country"], ["organicGoogleSearchClicks"], row_limit)
     landing_pages = _ga4_report(client, property_id, start, end, ["landingPagePlusQueryString"], quality_metrics, row_limit)
     devices = _ga4_report(client, property_id, start, end, ["deviceCategory"], quality_metrics, row_limit)
     daily = _ga4_report(client, property_id, start, end, ["date"], quality_metrics, row_limit)
@@ -206,6 +207,7 @@ def collect_ga4(
     channels = by_sessions(channels)
     sources = by_sessions(sources)
     countries = by_sessions(countries)
+    organic_search_countries.sort(key=lambda item: float(item.get("organicGoogleSearchClicks", 0) or 0), reverse=True)
     landing_pages = by_sessions(landing_pages)
     devices = by_sessions(devices)
     daily.sort(key=lambda item: str(item.get("date", "")))
@@ -229,6 +231,7 @@ def collect_ga4(
         "ga4_channels": channels,
         "ga4_sources": sources,
         "ga4_countries": countries,
+        "ga4_organic_search_countries": organic_search_countries,
         "ga4_landing_pages": landing_pages,
         "ga4_devices": devices,
         "ga4_daily": daily,

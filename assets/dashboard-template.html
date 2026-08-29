@@ -663,7 +663,7 @@
 
   <section class="panel" data-panel="markets" hidden>
     <div class="apple-section-heading"><span class="apple-section-index">06</span><div><h2>重点市场</h2><p>自然搜索的地区机会</p></div></div>
-    <div class="section-head"><div class="section-title">重点市场自然搜索表现</div><div class="section-note text-small">美国曝光最大，但搜索结果吸引力不足</div></div>
+    <div class="section-head"><div class="section-title">重点市场自然搜索表现</div><div class="section-note text-small">按点击量降序展示重点市场</div></div>
     <div class="chart" id="market-chart"></div>
     <div class="chart-caption text-small">优先优化美国市场的英文标题、描述、案例内容与产品落地页。</div>
   </section>
@@ -706,7 +706,7 @@
       const report = seoData.report || {};
       const months = seoData.months || [];
       let monthIndex = Math.max(0, months.length - 1);
-      let reportScope = 'month';
+      let reportScope = report.type === 'monthly' ? 'month' : 'period';
       let detailView = 'summary';
       let activeKeywordDetail = null;
       let activeKeywordDetailMode = null;
@@ -722,6 +722,7 @@
         return minutes ? `${minutes}分 ${seconds}秒` : `${seconds}秒`;
       };
       const channelName = value => ({'Direct':'直接访问','Organic Search':'自然搜索','Paid Search':'付费搜索','Organic Social':'自然社交','Referral':'引荐流量','Unassigned':'未分配'}[value] || value);
+      const pageName = value => value === '/' ? '首页' : value;
       const current = () => months[monthIndex] || {metrics:{},keywords:[],pages:[],channels:[],recommendations:[]};
       const previous = () => monthIndex > 0 ? months[monthIndex - 1] : null;
 
@@ -881,7 +882,7 @@
           grouped.get(key).targets.push(item.target);
         });
         const groups = [...grouped.values()];
-        el('google-seo-recommendations').innerHTML = groups.length ? groups.map(group => `<li class="recommendation-group"><div class="recommendation-group-head"><span class="viz-badge">${escapeHtml(group.type)}</span><strong>${number(group.targets.length)} 个对象</strong></div><div class="priority-copy">${escapeHtml(group.text)}</div><div class="recommendation-targets">${group.targets.map(target => `<span>${escapeHtml(target)}</span>`).join('')}</div></li>`).join('') : '<li class="seo-empty">当前筛选范围内没有触发优化建议</li>';
+        el('google-seo-recommendations').innerHTML = groups.length ? groups.map(group => `<li class="recommendation-group"><div class="recommendation-group-head"><span class="viz-badge">${escapeHtml(group.type)}</span><strong>${number(group.targets.length)} 个对象</strong></div><div class="priority-copy">${escapeHtml(group.text)}</div><div class="recommendation-targets">${group.targets.map(target => `<span>${escapeHtml(pageName(target))}</span>`).join('')}</div></li>`).join('') : '<li class="seo-empty">当前筛选范围内没有触发优化建议</li>';
       }
 
       function movement(value) {
@@ -1002,7 +1003,10 @@
       function renderPages() {
         const query = el('google-seo-filter').value.trim().toLowerCase();
         const sourceRows = reportRows('pages', 'path');
-        const rows = sourceRows.filter(row => `${row.path} ${row.page}`.toLowerCase().includes(query)).slice(0,10);
+        const rows = [...sourceRows]
+          .filter(row => `${row.path} ${row.page}`.toLowerCase().includes(query))
+          .sort((a,b) => Number(b.clicks || 0) - Number(a.clicks || 0) || Number(b.impressions || 0) - Number(a.impressions || 0))
+          .slice(0,10);
         if (activePageDetail && !rows.some(row => row.path === activePageDetail)) {
           activePageDetail = null;
           el('google-seo-page-detail').hidden = true;
@@ -1019,7 +1023,7 @@
         const totalPosition = totals.impressions ? totals.positionWeight / totals.impressions : 0;
         const totalLabel = reportScope === 'period' ? '报告期页面维度合计' : 'GSC 总计';
         const totalRow = `<div class="seo-data-row seo-total-row text-small"><div>${totalLabel}</div><div>${number(totals.clicks)}</div><div>${number(totals.impressions)}</div><div>${number(totalCtr,2)}%</div><div>${number(totalPosition,2)}</div><div></div></div>`;
-        el('google-seo-pages').innerHTML = `<div class="seo-data-row header text-small"><div>页面</div><div>点击</div><div>展示</div><div>CTR</div><div>平均排名</div><div></div></div>${totalRow}` + (rows.length ? rows.map(row => `<div class="seo-data-row"><div class="seo-name"><div class="seo-name-text">${escapeHtml(row.path)}</div></div><div>${number(row.clicks)}</div><div>${number(row.impressions)}</div><div>${number(row.ctr,2)}%</div><div>${number(row.position,1)}</div><div><button class="seo-row-action" type="button" data-page-detail="${escapeHtml(row.path)}"><span>页面分析</span><span aria-hidden="true">↗</span></button></div></div>`).join('') : '<div class="seo-empty">没有匹配的页面</div>');
+        el('google-seo-pages').innerHTML = `<div class="seo-data-row header text-small"><div>页面</div><div>点击</div><div>展示</div><div>CTR</div><div>平均排名</div><div></div></div>${totalRow}` + (rows.length ? rows.map(row => `<div class="seo-data-row"><div class="seo-name"><div class="seo-name-text">${escapeHtml(pageName(row.path))}</div></div><div>${number(row.clicks)}</div><div>${number(row.impressions)}</div><div>${number(row.ctr,2)}%</div><div>${number(row.position,1)}</div><div><button class="seo-row-action" type="button" data-page-detail="${escapeHtml(row.path)}"><span>页面分析</span><span aria-hidden="true">↗</span></button></div></div>`).join('') : '<div class="seo-empty">没有匹配的页面</div>');
         setDetailActionState('data-page-detail', activePageDetail, '页面分析', '收起分析');
         root.querySelectorAll('[data-page-detail]').forEach(button => button.addEventListener('click', () => {
           const pathValue = button.dataset.pageDetail;
@@ -1040,7 +1044,7 @@
         const history = months.map(month => ({month:month.label,row:month.pages.find(item => item.path === path)})).filter(item => item.row);
         const host = el('google-seo-page-detail');
         host.hidden = false;
-        host.innerHTML = `<div class="seo-detail-title">${escapeHtml(path)}</div><div class="seo-detail-grid">${history.map(item => `<div class="seo-detail-cell"><div class="text-small text-muted">${escapeHtml(item.month)}</div><div>${number(item.row.clicks)} 点击 · ${number(item.row.impressions)} 展示</div><div class="text-small">CTR ${number(item.row.ctr,2)}% · 平均排名 ${number(item.row.position,1)}</div></div>`).join('')}</div>`;
+        host.innerHTML = `<div class="seo-detail-title">${escapeHtml(pageName(path))}</div><div class="seo-detail-grid">${history.map(item => `<div class="seo-detail-cell"><div class="text-small text-muted">${escapeHtml(item.month)}</div><div>${number(item.row.clicks)} 点击 · ${number(item.row.impressions)} 展示</div><div class="text-small">CTR ${number(item.row.ctr,2)}% · 平均排名 ${number(item.row.position,1)}</div></div>`).join('')}</div>`;
       }
 
       function renderChannels() {
@@ -1101,6 +1105,11 @@
       monthSelect.innerHTML = months.map((month,index) => `<option value="${index}"${index === monthIndex ? ' selected' : ''}>${escapeHtml(month.label)}</option>`).join('');
       monthSelect.addEventListener('change', () => { monthIndex = Number(monthSelect.value); renderSelectedMonthDetails(); });
       const reportTotalToggle = el('google-seo-report-total-toggle');
+      const initialAggregate = reportScope === 'period';
+      reportTotalToggle.textContent = initialAggregate ? '返回按月查看' : '查看报告期合计';
+      reportTotalToggle.setAttribute('aria-pressed', String(initialAggregate));
+      reportTotalToggle.dataset.reportScope = initialAggregate ? 'month' : 'period';
+      reportTotalToggle.classList.toggle('is-active', initialAggregate);
       const toggleReportScope = () => {
         reportScope = reportScope === 'month' ? 'period' : 'month';
         const aggregate = reportScope === 'period';
@@ -1270,11 +1279,11 @@
         : [...countryTotals.values()]
           .sort((a,b) => Number(b.clicks || 0) - Number(a.clicks || 0) || Number(b.impressions || 0) - Number(a.impressions || 0))
           .slice(0,5);
-      const maxImpressions = Math.max(1,...markets.map(row => Number(row.impressions || 0)));
-      const marketRows = markets.map(row => `<div class="hrow"><div class="hlabel">${countryName(row.country)}</div><div class="htrack"><div class="hbar" style="width:${Math.max(Number(row.impressions || 0)/maxImpressions*100,1.6).toFixed(1)}%"></div></div><div class="hvalue">${Number(row.impressions || 0).toLocaleString()}</div><div class="hclicks">${Number(row.clicks || 0)}</div></div>`).join('');
+      const maxClicks = Math.max(1,...markets.map(row => Number(row.clicks || 0)));
+      const marketRows = markets.map(row => `<div class="hrow"><div class="hlabel">${countryName(row.country)}</div><div class="htrack"><div class="hbar" style="width:${Math.max(Number(row.clicks || 0)/maxClicks*100,1.6).toFixed(1)}%"></div></div><div class="hvalue">${Number(row.impressions || 0).toLocaleString()}</div><div class="hclicks">${Number(row.clicks || 0)}</div></div>`).join('');
       root.querySelector('#market-chart').innerHTML = `<div class="hchart" role="img" aria-label="五个重点市场的 Google Search Console 展示和点击"><div class="hmetric-head text-small"><span></span><span></span><span>展示</span><span>点击</span></div>${marketRows}</div>`;
       const marketNote = root.querySelector('[data-panel="markets"] .section-note');
-      if (marketNote && markets[0]) marketNote.textContent = `${countryName(markets[0].country)} 曝光最大，但搜索结果吸引力不足`;
+      if (marketNote && markets[0]) marketNote.textContent = `${countryName(markets[0].country)} 点击最多，搜索结果吸引力不足`;
 
       const trafficHost = root.querySelector('#traffic-acquisition-summary');
       if (trafficHost) {

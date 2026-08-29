@@ -96,6 +96,10 @@ def channel_name(value: str) -> str:
     }.get(value, value)
 
 
+def page_name(value: str) -> str:
+    return "首页" if value == "/" else value
+
+
 def _value(row: Dict[str, Any], key: str) -> float:
     try:
         return float(row.get(key, 0) or 0)
@@ -178,7 +182,7 @@ def build_action_plans(months: List[Dict[str, Any]], report_type: str) -> List[D
     if ctr_page:
         plans.append({
             "period": "1–30 天",
-            "title": f"提升 {ctr_page['path']} 的搜索点击率",
+            "title": f"提升 {page_name(str(ctr_page['path']))} 的搜索点击率",
             "copy": (
                 f"{scope}该页获得 {_action_number(ctr_page['impressions'])} 次曝光、"
                 f"{_action_number(ctr_page['clicks'])} 次点击，CTR {_action_number(ctr_page['ctr'], 2)}%，"
@@ -215,7 +219,7 @@ def build_action_plans(months: List[Dict[str, Any]], report_type: str) -> List[D
     if experience_page:
         plans.append({
             "period": "61–90 天",
-            "title": f"改善 {experience_page['path']} 的访问承接",
+            "title": f"改善 {page_name(str(experience_page['path']))} 的访问承接",
             "copy": (
                 f"{scope}该页有 {_action_number(experience_page['sessions'])} 次会话，"
                 f"跳出率 {_action_number(experience_page['bounceRate'], 2)}%。"
@@ -243,10 +247,10 @@ def summary(payload: Dict[str, Any], title: str, domain: str) -> str:
     ranked_keywords = len({str(row.get("query", "")) for month in months for row in month.get("keywords", []) if row.get("query")})
     keywords = sorted(latest.get("keywords", []), key=lambda row: float(row.get("impressions", 0) or 0), reverse=True)[:2]
     channels = top_rows(months, "channels", "sessionDefaultChannelGroup", "sessions")
-    pages = top_rows(months, "pages", "path", "sessions")
-    countries = top_rows(months, "ga4Countries", "country", "sessions", limit=1)
+    pages = top_rows(months, "pages", "path", "clicks")
+    countries = top_rows(months, "ga4OrganicSearchCountries", "country", "organicGoogleSearchClicks", limit=1)
     channel_text = "，其次是".join(channel_name(str(item["name"])) for item in channels)
-    page_text = "，其次是".join(str(item["name"]) for item in pages)
+    page_text = "，其次是".join(page_name(str(item["name"])) for item in pages)
     lines = [
         f"# {title} 数据总结",
         "",
@@ -262,10 +266,9 @@ def summary(payload: Dict[str, Any], title: str, domain: str) -> str:
         lines.append("2. " + "；".join(f"关键词 {row.get('query')} 排名 {float(row.get('position', 0) or 0):.0f}" for row in keywords) + "。")
     lines.append(f"3. 谷歌自然展示次数 {int(total['impressions'])} 次，点击次数 {int(total['clicks'])} 次，CTR {total['ctr']:.2f}%。")
     if channel_text or page_text:
-        lines.append(f"4. 访问来源以 {channel_text or '暂无可用数据'} 为主；流量较高的页面为 {page_text or '暂无可用数据'}。")
+        lines.append(f"4. 访问来源以 {channel_text or '暂无可用数据'} 为主；GSC 点击最高的页面为 {page_text or '暂无可用数据'}。")
     lines.append("5. 社媒建议持续更新与产品、案例相关的帖子，为网站引流。")
-    if countries:
-        lines.append(f"6. 访问较多的国家/地区是 {countries[0]['name']}。")
+    lines.append(f"6. 访问较多的国家/地区是 {countries[0]['name'] if countries else '暂无可用数据'}。")
     lines.append("7. 建议每周保持 2–4 篇网站博客和产品更新。")
     comparison = payload.get("report", {}).get("comparison", {})
     if comparison.get("available"):

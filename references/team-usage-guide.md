@@ -21,7 +21,7 @@
 
 ```bash
 mkdir -p private
-cp ~/.codex/skills/seo-report-portal-v2-1/assets/dataforseo.env.example private/dataforseo.env
+cp ~/.codex/skills/seo-report-portal-v2-2/assets/dataforseo.env.example private/dataforseo.env
 chmod 600 private/dataforseo.env
 ```
 
@@ -39,7 +39,7 @@ DATAFORSEO_PASSWORD=<API_PASSWORD>
 在客户工作区对 Codex 发送：
 
 ```text
-使用 $seo-report-portal-v2-1 为 <domain> 准备 DataForSEO 试用配置。
+使用 $seo-report-portal-v2-2 为 <domain> 准备 DataForSEO 试用配置。
 只从 <YYYY-MM> 的 GSC 归档中挑选看板需要的机会词；市场为 United States、语言 English、设备 Google desktop。
 先列出关键词数、SERP 数、用途与费用上限，并只执行 dry-run；不要发起付费请求。
 ```
@@ -80,7 +80,7 @@ Authorization = "Bearer <PERSONAL_OR_TEAM_TOKEN>"
 首次真正采集时，先对 Codex 发送：
 
 ```text
-使用 $seo-report-portal-v2-1 为 <domain> 准备 SEOAgent 策略快照。
+使用 $seo-report-portal-v2-2 为 <domain> 准备 SEOAgent 策略快照。
 查询范围：United States / English；本站关键词最多 20、机会主题最多 20；最多 3 个竞品、每个最多 5 个关键词。
 先只给出查询范围、预计费用和归档路径，不发起查询。
 ```
@@ -96,7 +96,7 @@ SEOAgent 的优先优化主题、竞品关键词方向和本站外部关键词�
 3. 如要加入市场机会验证，按上面的 DataForSEO 流程：范围与预算 → 明确确认 → 执行一次 → 归档。
 4. 如要加入策略机会，按上面的 SEOAgent 流程：范围与预算 → 明确确认 → 采集 → 按示例结构归档。
 5. 使用报告生成器的 `--dataforseo-archive-dir` 和 `--seoagent-archive-dir` 显式载入第三方归档。
-6. 审核本地 HTML、`summary.md` 与内部诊断；得到明确发布授权后，按 `references/team-first-run-guide.md` 的“本地 → SMB → OSS”流程发布并回读校验线上链接。
+6. 审核本地 HTML、`summary.md` 与内部诊断；得到明确发布授权后，按 `references/team-first-run-guide.md` 的“本地 → SMB → OSS”流程发布并回读校验线上链接。最终客户回复中的“文字总结”只逐字复制该份已审核 `summary.md` 的 `## 运营总结` 标题与编号正文，不得改写、删减、重排、补充或替换。客户可见的根路径 `/` 一律显示为“首页”，但不改写原始数据；运营总结的页面排行按 GSC 点击量，月报取当月，季报/年报取整个报告期合计；第 6 条国家/地区只按 GA4 `organicGoogleSearchClicks`（Google 搜索自然点击次数）选择，缺失时显示“暂无可用数据”，不得改用会话、GSC 点击或展示。
 
 ## 月报与季报
 

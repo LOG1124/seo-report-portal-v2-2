@@ -63,6 +63,7 @@ def _month_summary(archive: Dict[str, Any], label: str) -> Dict[str, Any]:
         "channels": list(ga4.get("ga4_channels", [])),
         "sources": list(ga4.get("ga4_sources", [])),
         "ga4Countries": list(ga4.get("ga4_countries", [])),
+        "ga4OrganicSearchCountries": list(ga4.get("ga4_organic_search_countries", [])),
         "countries": list(gsc.get("gsc_countries", [])),
         "gscDaily": list(gsc.get("gsc_daily", [])),
         "ga4Daily": list(ga4.get("ga4_daily", [])),
