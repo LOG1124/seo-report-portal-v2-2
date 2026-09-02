@@ -12,6 +12,7 @@ Work from a team workspace, never from this installed skill directory. Read `ref
 ## Core rules
 
 - GSC owns search performance and dashboard opportunity-keyword selection. GA4 owns traffic, engagement, and key events. Never replace either with third-party estimates.
+- 运营总结关键词第 2 条只使用 GSC 查询数据：月报取当月非品牌词；季报和年报先合并所选报告期，同一关键词按曝光加权计算平均排名，排除包含客户域名主词的品牌词，再按平均排名数值升序取前两条。GA4、DataForSEO 和 SEOAgent 不参与该排名。
 - DataForSEO owns selected-keyword search volume, CPC, paid competition, monthly trend, and limited live SERP. Request only exact GSC-selected dashboard keywords.
 - SEOAgent owns strategy opportunities: priority optimization themes, competitor keyword directions, and external keyword discoveries. Its estimates never enter first-party KPIs or DataForSEO market columns.
 - Before any paid DataForSEO or SEOAgent request, show the customer/domain, market, language, keyword count, SERP count, maximum cost, and purpose. Wait for explicit confirmation. Never retry a paid request automatically.

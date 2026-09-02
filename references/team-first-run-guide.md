@@ -4,6 +4,47 @@
 
 在 Windows 首次使用前，先阅读 [Windows 配置](windows-first-run.md)；不要把 macOS 的 `/Volumes/共享盘`、`.venv/bin/python` 或 `chmod` 命令照搬到 Windows。
 
+## 已安装 v2.2 的安全更新：v2.2.1
+
+这是 Skill 的补丁更新，不需要重新配置 Google、DataForSEO、SEOAgent、SMB 或 OSS。管理员只需通过安全渠道提供新的 `seo-report-portal-v2-2.zip` 和 SHA-256；同事只替换全局 Skill 目录，不修改客户工作区。
+
+更新时必须保留以下内容不变：客户工作区的 `private/`、`workflows/automation/input/`、`output/dashboards/`、`~/.codex/config.toml` 以及已经发布的报告。旧的全局 Skill 目录先移动到带时间戳的备份目录，整个过程不删除文件；若现有全局 Skill 目录内出现 `private/`，先停止并报告，不要把凭据带入新包。
+
+macOS/Linux 已安装版本更新：
+
+```bash
+shasum -a 256 /path/to/seo-report-portal-v2-2.zip
+stage_dir="$(mktemp -d)"
+unzip -q /path/to/seo-report-portal-v2-2.zip -d "$stage_dir"
+test -f "$stage_dir/seo-report-portal-v2-2/SKILL.md"
+test ! -e "$stage_dir/seo-report-portal-v2-2/private"
+skill_dir=~/.codex/skills/seo-report-portal-v2-2
+backup_dir=~/.codex/skill-backups/seo-report-portal-v2-2-pre-2.2.1-$(date +%Y%m%d%H%M%S)
+test ! -e "$skill_dir/private"
+mkdir -p "$(dirname "$backup_dir")"
+mv "$skill_dir" "$backup_dir"
+mv "$stage_dir/seo-report-portal-v2-2" "$skill_dir"
+```
+
+Windows 已安装版本更新：
+
+```powershell
+$zip = 'C:\path\to\seo-report-portal-v2-2.zip'
+$stage = Join-Path $env:TEMP ('seo-report-portal-v2-2-' + [guid]::NewGuid())
+$skill = Join-Path $env:USERPROFILE '.codex\skills\seo-report-portal-v2-2'
+$backup = Join-Path $env:USERPROFILE ('.codex\skill-backups\seo-report-portal-v2-2-pre-2.2.1-' + (Get-Date -Format yyyyMMddHHmmss))
+Get-FileHash $zip -Algorithm SHA256
+Expand-Archive -LiteralPath $zip -DestinationPath $stage
+if (!(Test-Path (Join-Path $stage 'seo-report-portal-v2-2\SKILL.md'))) { throw '候选包缺少 SKILL.md' }
+if (Test-Path (Join-Path $stage 'seo-report-portal-v2-2\private')) { throw '候选包包含 private，停止更新' }
+if (Test-Path (Join-Path $skill 'private')) { throw '现有全局 Skill 包含 private，停止更新' }
+New-Item -ItemType Directory -Force (Split-Path $backup) | Out-Null
+Move-Item $skill $backup
+Move-Item (Join-Path $stage 'seo-report-portal-v2-2') $skill
+```
+
+替换后重启 Codex，让新 Skill 生效；不需要重建客户工作区或重新填写任何密钥。出现问题时，将新目录移走，再把对应时间戳备份目录移回 `~/.codex/skills/seo-report-portal-v2-2`（Windows 使用同样的 `Move-Item`），然后重新启动 Codex。
+
 ## 管理员先完成
 
 1. 为同事提供客户的 GA4/GSC 只读服务账号访问。

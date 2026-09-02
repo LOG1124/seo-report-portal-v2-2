@@ -48,6 +48,39 @@ class SummaryPageNamesTest(unittest.TestCase):
 
         self.assertIn("GSC 点击最高的页面为 /contact-us，其次是首页。", rendered)
 
+    def test_quarterly_summary_uses_non_brand_gsc_period_average_positions(self) -> None:
+        """Quarterly keyword summary uses non-brand GSC positions aggregated across the period."""
+        payload = {
+            "months": [
+                {"label": "2026-05", "metrics": {"sessions": 1}, "keywords": [
+                    {"query": "Acme", "clicks": 20, "impressions": 1000, "position": 1},
+                    {"query": "widget supplier", "clicks": 1, "impressions": 20, "position": 8},
+                    {"query": "widget manufacturer", "clicks": 1, "impressions": 20, "position": 12},
+                    {"query": "high impression widget", "clicks": 1, "impressions": 20, "position": 50},
+                ], "channels": [], "pages": [], "ga4Countries": []},
+                {"label": "2026-06", "metrics": {"sessions": 1}, "keywords": [
+                    {"query": "Acme", "clicks": 20, "impressions": 1000, "position": 1},
+                    {"query": "widget supplier", "clicks": 1, "impressions": 20, "position": 9},
+                    {"query": "widget manufacturer", "clicks": 1, "impressions": 20, "position": 12},
+                    {"query": "high impression widget", "clicks": 1, "impressions": 20, "position": 50},
+                ], "channels": [], "pages": [], "ga4Countries": []},
+                {"label": "2026-07", "metrics": {"sessions": 1}, "keywords": [
+                    {"query": "Acme", "clicks": 20, "impressions": 1000, "position": 1},
+                    {"query": "widget supplier", "clicks": 1, "impressions": 20, "position": 10},
+                    {"query": "widget manufacturer", "clicks": 1, "impressions": 20, "position": 12},
+                    {"query": "high impression widget", "clicks": 1, "impressions": 20, "position": 50},
+                ], "channels": [], "pages": [], "ga4Countries": []},
+            ],
+            "report": {"type": "quarterly", "selectedMonths": ["2026-05", "2026-06", "2026-07"], "rangeLabel": "2026-05 至 2026-07", "typeLabel": "季报", "comparison": {}},
+            "quarterComparison": {"current": {"metrics": {"averagePosition": 20, "impressions": 100, "clicks": 11, "ctr": 11, "sessions": 3}}},
+        }
+
+        rendered = summary(payload, "acme.com quarterly（2026-05_to_2026-07）", "acme.com")
+
+        self.assertIn("关键词 widget supplier 排名 9；关键词 widget manufacturer 排名 12。", rendered)
+        self.assertNotIn("关键词 Acme", rendered)
+        self.assertNotIn("关键词 high impression widget", rendered)
+
 
 if __name__ == "__main__":
     unittest.main()

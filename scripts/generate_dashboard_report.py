@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List
 
-from build_google_seo_dashboard import _normalise_strategy_opportunities, build_dashboard_data
+from build_google_seo_dashboard import _domain_brand_token, _normalise_strategy_opportunities, build_dashboard_data
 from report_diagnostics import diagnostic, write_diagnostics
 from validate_report_artifact import validate_report_artifact, validate_report_tree
 
@@ -105,6 +105,26 @@ def _value(row: Dict[str, Any], key: str) -> float:
         return float(row.get(key, 0) or 0)
     except (TypeError, ValueError):
         return 0.0
+
+
+def _is_brand_query(query: Any, domain: str) -> bool:
+    """Use the customer domain token as the no-reconfiguration brand baseline."""
+    token = _domain_brand_token(str(domain).removeprefix("www."))
+    normalised_query = re.sub(r"[^a-z0-9]+", "", str(query or "").lower())
+    # ponytail: domain-token heuristic covers the no-config baseline; add explicit aliases when a client needs them.
+    return bool(token and normalised_query and token in normalised_query)
+
+
+def _summary_keywords(months: List[Dict[str, Any]], domain: str, report_type: str) -> List[Dict[str, Any]]:
+    """Select the report summary keywords from GSC rows, not GA4 or third-party data."""
+    if report_type == "monthly":
+        rows = [row for row in months[-1].get("keywords", []) if not _is_brand_query(row.get("query"), domain)]
+        return sorted(rows, key=lambda row: _value(row, "impressions"), reverse=True)[:2]
+    rows = [
+        row for row in _aggregate_action_rows(months, "keywords", "query")
+        if row["impressions"] > 0 and not _is_brand_query(row.get("query"), domain)
+    ]
+    return sorted(rows, key=lambda row: (row["position"], -row["impressions"], str(row["query"])))[:2]
 
 
 def _aggregate_action_rows(months: List[Dict[str, Any]], key: str, name_key: str) -> List[Dict[str, Any]]:
@@ -243,9 +263,8 @@ def summary(payload: Dict[str, Any], title: str, domain: str) -> str:
     months = [month for month in all_months if month["label"] in selected_labels] or all_months
     total = payload["quarterComparison"]["current"]["metrics"]
     first, last = months[0]["metrics"], months[-1]["metrics"]
-    latest = months[-1]
     ranked_keywords = len({str(row.get("query", "")) for month in months for row in month.get("keywords", []) if row.get("query")})
-    keywords = sorted(latest.get("keywords", []), key=lambda row: float(row.get("impressions", 0) or 0), reverse=True)[:2]
+    keywords = _summary_keywords(months, domain, payload.get("report", {}).get("type", "monthly"))
     channels = top_rows(months, "channels", "sessionDefaultChannelGroup", "sessions")
     pages = top_rows(months, "pages", "path", "clicks")
     countries = top_rows(months, "ga4OrganicSearchCountries", "country", "organicGoogleSearchClicks", limit=1)

@@ -4,7 +4,7 @@
 
 ## 1. 本地工具与私密文件
 
-在 PowerShell 的客户工作区执行。`$skill` 是 Codex 已安装的现役 v2.1 Skill，不是旧版本：
+在 PowerShell 的客户工作区执行。`$skill` 是 Codex 已安装的现役 v2.2 Skill，不是旧版本：
 
 ```powershell
 $skill = Join-Path $env:USERPROFILE '.codex\skills\seo-report-portal-v2-2'
