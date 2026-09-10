@@ -22,7 +22,6 @@ from source_archive_usage import verify_usage
 
 FILES = ("index.html", "dashboard-data.json", "summary.md")
 PERIOD_RE = re.compile(r"^(?:\d{4}|\d{4}-\d{2}|\d{4}-\d{2}_to_\d{4}-\d{2})$")
-SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 REPORT_TYPES = {"monthly", "quarterly", "yearly"}
 
 
@@ -87,8 +86,6 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if not SLUG_RE.fullmatch(args.client_slug):
-        raise ValueError("客户标识只能使用小写字母、数字和连字符。")
     if not PERIOD_RE.fullmatch(args.period):
         raise ValueError("周期格式必须是 YYYY、YYYY-MM 或 YYYY-MM_to_YYYY-MM。")
 

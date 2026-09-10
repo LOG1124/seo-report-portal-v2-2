@@ -101,6 +101,23 @@ class PublisherSourceGateTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "客户标识与共享映射不一致"):
                 publish_main()
 
+    def test_dry_run_accepts_registered_legacy_public_slug(self) -> None:
+        self.record = CustomerRecord("example.com", "example.com", "active")
+        (self.source_root / "customer-registry.json").write_text(
+            json.dumps({"customers": [{
+                "canonical_domain": self.record.canonical_domain,
+                "portal_slug": self.record.portal_slug,
+                "legacy_public_slug": True,
+                "status": self.record.status,
+            }]}),
+            encoding="utf-8",
+        )
+        self._write_usage()
+        self._write_oss_env()
+
+        with patch.object(sys, "argv", publish_args(self.root, "example.com", dry_run=True)):
+            self.assertEqual(publish_main(), 0)
+
     def test_dry_run_rejects_changed_source_archive_without_writing_public_files(self) -> None:
         archive = self._archive()
         self._write_usage()

@@ -62,7 +62,7 @@ Move-Item (Join-Path $stage 'seo-report-portal-v2-3') $skill
 ## 共享原始档案首次设置
 
 1. 连接共享原始档案根目录。macOS 使用 `/Volumes/共享盘/seo-report-source-archive`；Windows 使用映射盘路径或 UNC，具体命令见 [Windows 配置](windows-first-run.md)。该共享盘是 guest 读写，**不是保密归档位置**。
-2. 从 `assets/customer-registry.example.json` 创建 `<共享原始档案根目录>/customer-registry.json`。在采集某客户前，先添加一条 active 的真实域名 ↔ 报告 slug 记录。
+2. 从 `assets/customer-registry.example.json` 创建 `<共享原始档案根目录>/customer-registry.json`。在采集某客户前，先添加一条 active 的真实域名 ↔ 报告 slug 记录。新客户 slug 只能是小写字母、数字和连字符；仅为保留一个目录名与真实域名完全相同的既有公开路径，才允许添加 `legacy_public_slug: true`，新客户不得使用该例外。
 3. 每次采集必须传入 `--archive-root <共享原始档案根目录> --month YYYY-MM`；每次生成也必须传入同一个 `--archive-root`。采集/导入完成前会先独占写入 JSON，再写同名非公开 `.json.ready` SHA-256 标记；只有两者匹配才可生成、发布或自动选词。缺上期档案会阻止普通报告；只有获明确批准的新客户例外才能在生成和发布命令中都加 `--allow-current-only`。
 4. `GOOGLE_SOURCE_ARCHIVE_ROOT` 仅可作为 `oss.env` 内供人复制到发布器 `--source-archive-root` 的便利值。采集器和生成器绝不会隐式读取它。
 

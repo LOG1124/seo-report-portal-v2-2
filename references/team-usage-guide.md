@@ -93,7 +93,7 @@ SEOAgent 的优先优化主题、竞品关键词方向和本站外部关键词�
 
 ## 每月工作流
 
-1. 先连接共享原始档案根目录（macOS 示例：`/Volumes/共享盘/seo-report-source-archive`；Windows 使用映射盘或 UNC），并从 `assets/customer-registry.example.json` 创建 `<共享根目录>/customer-registry.json`。每个客户采集前，先登记一条 active 的“真实域名 ↔ 报告 slug”记录。
+1. 先连接共享原始档案根目录（macOS 示例：`/Volumes/共享盘/seo-report-source-archive`；Windows 使用映射盘或 UNC），并从 `assets/customer-registry.example.json` 创建 `<共享根目录>/customer-registry.json`。每个客户采集前，先登记一条 active 的“真实域名 ↔ 报告 slug”记录。新客户 slug 只能使用小写字母、数字和连字符；只有已存在且目录名刚好等于真实域名的旧公开路径，才可显式加 `legacy_public_slug: true` 保留，不能把该标记用于新客户。
 2. 补回 v2.2 本机旧档案时，使用 `import_google_archive.py --archive-root <共享根目录> --source-file <旧 JSON> --month YYYY-MM`；它先验证客户、自然月和非空 GA4/GSC，再按原始字节导入，绝不手工复制、移动、删除或覆盖共享盘文件。来源只能是旧版 GA4/GSC 原始 JSON，不能是 `dashboard-data.json`、`summary.md` 或 `index.html`。采集器/导入器先独占写入 `<共享根目录>/ga4-gsc/<真实域名>/YYYY-MM.json` 并完成同步，再独占写入同名非公开 `.json.ready` SHA-256 标记；只有两者存在且哈希一致才可被生成、发布或自动选词读取，任一异常都停止且绝不覆盖。非 dry-run 的共享归档必须同时采集 GA4 和 GSC；`--dry-run` 可单平台且不写本机数据或共享档案；`--archive-only` 只写共享档案，不更新本机 `collected_data.json`。
 3. 生成只含官方数据的本地月报时，必须指定同一个 `--archive-root`。缺少任一对比期归档会停止普通生成；仅新客户等已获明确批准的例外才可加 `--allow-current-only`，并会在本地报告目录写入不公开的 `source-archive-usage.json`。检查客户、周期和来源是否正确。
 4. 如要加入市场机会验证，按上面的 DataForSEO 流程：范围与预算 → 明确确认 → 以 `--archive-root <共享根目录>` 从注册表对应的完整当月 GA4/GSC 档案选词 → 执行一次 → 归档；配置不得包含 `source_archive`。

@@ -26,6 +26,7 @@ class CustomerRecord:
     canonical_domain: str
     portal_slug: str
     status: str
+    legacy_public_slug: bool = False
 
 
 def _normalise_domain(value: Any) -> str:
@@ -43,12 +44,20 @@ def _parse_customer(item: Any) -> CustomerRecord:
 
     domain = _normalise_domain(item.get("canonical_domain"))
     slug = item.get("portal_slug")
-    if not isinstance(slug, str) or not SLUG_RE.fullmatch(slug):
+    legacy_public_slug = item.get("legacy_public_slug", False)
+    if not isinstance(legacy_public_slug, bool):
+        raise ValueError("legacy_public_slug 必须是布尔值")
+    if not isinstance(slug, str):
+        raise ValueError("portal_slug 无效")
+    if legacy_public_slug:
+        if slug != domain:
+            raise ValueError("历史 portal_slug 必须与 canonical_domain 完全一致")
+    elif not SLUG_RE.fullmatch(slug):
         raise ValueError("portal_slug 无效")
     status = item.get("status")
     if not isinstance(status, str) or status not in VALID_STATUSES:
         raise ValueError("status 必须是 active 或 retired")
-    return CustomerRecord(domain, slug, status)
+    return CustomerRecord(domain, slug, status, legacy_public_slug)
 
 
 def load_registry(archive_root: Path) -> dict[str, CustomerRecord]:

@@ -91,6 +91,32 @@ class CustomerRegistryTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "portal_slug"):
                 load_registry(root)
 
+    def test_registry_accepts_an_explicit_legacy_public_domain_slug(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_registry(root, [{
+                "canonical_domain": "dgmastermax.com",
+                "portal_slug": "dgmastermax.com",
+                "legacy_public_slug": True,
+                "status": "active",
+            }])
+
+            record = require_active_customer(root, "dgmastermax.com")
+
+            self.assertEqual(record.portal_slug, "dgmastermax.com")
+
+    def test_registry_rejects_dotted_slug_without_explicit_legacy_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_registry(root, [{
+                "canonical_domain": "dgmastermax.com",
+                "portal_slug": "dgmastermax.com",
+                "status": "active",
+            }])
+
+            with self.assertRaisesRegex(ValueError, "portal_slug"):
+                load_registry(root)
+
     def test_registry_rejects_invalid_status_after_valid_domain_and_slug(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
