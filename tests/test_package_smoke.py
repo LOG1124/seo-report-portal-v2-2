@@ -107,6 +107,8 @@ class PackageSmokeTests(unittest.TestCase):
         self.assertIn("不得自行重新采集", runbook)
         self.assertIn("不得读取、输出、复制或改写任何密钥", runbook)
         self.assertIn("小语种首页", runbook)
+        self.assertIn("当前 Codex 工作区根目录内递归", runbook)
+        self.assertIn("**\\workflows\\automation\\input\\google_api_archive\\*.json", runbook)
 
     def test_windows_dataforseo_dry_run_prepares_safe_local_config_first(self) -> None:
         """The documented dry run must not reference a config the setup omitted."""
