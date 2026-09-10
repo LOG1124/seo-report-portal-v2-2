@@ -76,6 +76,7 @@ python <installed-skill-dir>/scripts/check_package_parity.py --source <seo-repor
 - `references/team-usage-guide.md` — teammate setup and daily workflow.
 - `references/team-first-run-guide.md` — first-use checklist for the complete collection-to-public-link workflow.
 - `references/windows-first-run.md` — Windows paths, SMB mapping, Python, and publisher setup.
+- `references/windows-v23-repair-runbook.md` — one-task Windows update, UNC pilot, and v2.2 archive recovery handoff.
 - `references/third-party-data-guide.md` — provider scope, cost gate, archive rules, and dashboard meaning.
 - `references/seo-data-source-contract.json` — authoritative field ownership.
 - `assets/dataforseo-trial.example.json` — safe DataForSEO configuration example.

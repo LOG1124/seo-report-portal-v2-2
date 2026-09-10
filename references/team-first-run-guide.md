@@ -78,6 +78,8 @@ Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
 
 替换后重启 Codex，让新 Skill 生效；不需要重建客户工作区或重新填写任何密钥。出现问题时，将新目录移走，再把对应时间戳备份目录移回 `~/.codex/skills/seo-report-portal-v2-3`（Windows 使用同样的 `Move-Item`），然后重新启动 Codex。上述命令只删除临时 Git archive；不会删除任何旧 Skill、客户工作区或私密配置。
 
+Windows 同事如需将“更新 v2.3、验证 UNC、迁移当前工作区已有 v2.2 原始档案”交由 Codex 一次完成，可将 `references/windows-v23-repair-runbook.md` 作为任务附件交给 Codex。该运行手册不扫描整个磁盘、不自动重采集 Google 数据，也不会触碰 `private/` 或 `~/.codex/config.toml`。
+
 ## 管理员先完成
 
 1. 为同事提供客户的 GA4/GSC 只读服务账号访问。

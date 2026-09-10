@@ -12,7 +12,7 @@ from pathlib import Path
 PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE / "scripts"))
 
-from check_package_parity import check_package_parity  # noqa: E402
+from check_package_parity import CANONICAL_FILES, check_package_parity  # noqa: E402
 
 
 FILES = (
@@ -27,7 +27,10 @@ FILES = (
     "scripts/generate_dashboard_report.py",
     "scripts/publish_oss_report.py",
     "scripts/source_archive_usage.py",
+    "references/team-first-run-guide.md",
     "references/team-usage-guide.md",
+    "references/windows-first-run.md",
+    "references/windows-v23-repair-runbook.md",
     "references/third-party-data-guide.md",
     "agents/openai.yaml",
 )
@@ -76,6 +79,9 @@ class PackageParityTests(unittest.TestCase):
             staged_zip = self.make_zip(source, root / "staged.zip")
             codes = [item["code"] for item in check_package_parity(source, staged_zip, installed)]
             self.assertIn("SKILL_PACKAGE_OUT_OF_SYNC", codes)
+
+    def test_windows_repair_runbook_is_a_release_parity_file(self) -> None:
+        self.assertIn("references/windows-v23-repair-runbook.md", CANONICAL_FILES)
 
 
 if __name__ == "__main__":

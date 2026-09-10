@@ -99,6 +99,14 @@ class PackageSmokeTests(unittest.TestCase):
         self.assertIn("~/.codex/config.toml", guide)
         self.assertIn("现有全局 Skill 包含 private，停止更新", guide)
 
+    def test_windows_repair_runbook_keeps_automation_in_a_safe_scope(self) -> None:
+        runbook = (PACKAGE / "references" / "windows-v23-repair-runbook.md").read_text(encoding="utf-8")
+        self.assertIn("https://github.com/LOG1124/seo-report-portal-v2-3.git", runbook)
+        self.assertIn("WINDOWS_UNC_PILOT_PASS", runbook)
+        self.assertIn("不得扫描整个磁盘", runbook)
+        self.assertIn("不得自行重新采集", runbook)
+        self.assertIn("不得读取、输出、复制或改写任何密钥", runbook)
+
     def test_windows_dataforseo_dry_run_prepares_safe_local_config_first(self) -> None:
         """The documented dry run must not reference a config the setup omitted."""
         guide = (PACKAGE / "references" / "windows-first-run.md").read_text(encoding="utf-8")
