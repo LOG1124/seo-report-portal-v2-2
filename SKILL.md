@@ -65,7 +65,7 @@ The shared SMB source archive has guest read/write access and is therefore not c
 Read `references/team-first-run-guide.md` before a teammate's first end-to-end run. It covers Google access, optional providers, SMB, individual RAM credentials, ossutil, approval, and the required local-to-SMB-to-OSS order.
 On Windows, also read `references/windows-first-run.md` before configuring paths or running the publisher.
 
-Before replacing the v2.3 ZIP or global v2.3 installation, create a staged ZIP and require parity for the complete v2.3 contract:
+Before replacing the global v2.3 installation from GitHub `main`, require a clean Git source checkout and a staged Git archive parity check for the complete v2.3 contract:
 
 ```text
 python <installed-skill-dir>/scripts/check_package_parity.py --source <seo-report-portal-v2-3-source> --staged-zip <candidate.zip> --installed <global-seo-report-portal-v2-3>

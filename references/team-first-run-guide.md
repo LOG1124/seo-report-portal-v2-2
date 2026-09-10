@@ -6,44 +6,77 @@
 
 ## 安装或升级 v2.3
 
-这次更新不需要重新配置 Google、DataForSEO、SEOAgent、SMB 或 OSS。管理员只需通过安全渠道提供新的 `seo-report-portal-v2-3.zip` 和 SHA-256；同事只替换全局 Skill 目录，不修改客户工作区。
+这次更新从 GitHub 仓库 `https://github.com/LOG1124/seo-report-portal-v2-3.git` 的 `main` 分支取得 v2.3，不再由管理员分发 ZIP。更新**不会**重新配置 Google、DataForSEO、SEOAgent、SMB 或 OSS，也不会读取、复制或改写任何密钥。
 
-更新时必须保留以下内容不变：客户工作区的 `private/`、`workflows/automation/input/`、`output/dashboards/`、`~/.codex/config.toml` 以及已经发布的报告。旧的全局 Skill 目录先移动到带时间戳的备份目录，整个过程不删除文件；若现有全局 Skill 目录内出现 `private/`，先停止并报告，不要把凭据带入新包。
+更新时必须保留以下内容不变：客户工作区的 `private/`、`workflows/automation/input/`、`output/dashboards/`、`~/.codex/config.toml` 以及已经发布的报告。GitHub 工作副本固定放在全局 Skill 目录之外；旧的全局 v2.3 Skill 目录只会移动到带时间戳的备份目录。若源副本或现有全局 Skill 内出现 `private/`，先停止并报告，不要将凭据带入新安装。
 
-macOS/Linux 已安装版本更新：
+macOS/Linux 从 GitHub 更新：
 
 ```bash
-shasum -a 256 /path/to/seo-report-portal-v2-3.zip
+repo_url='https://github.com/LOG1124/seo-report-portal-v2-3.git'
+source_dir="$HOME/.codex/sources/seo-report-portal-v2-3"
+skill_dir="$HOME/.codex/skills/seo-report-portal-v2-3"
+backup_dir="$HOME/.codex/skill-backups/seo-report-portal-v2-3-pre-update-$(date +%Y%m%d%H%M%S)"
+
+if test -e "$source_dir"; then
+  test -d "$source_dir/.git" || { echo '现有 GitHub 源目录不是 Git 工作副本，停止。' >&2; exit 1; }
+  test -z "$(git -C "$source_dir" status --porcelain)" || { echo 'GitHub 源目录有本地修改，停止。' >&2; exit 1; }
+  git -C "$source_dir" fetch --prune origin
+  git -C "$source_dir" switch main
+  git -C "$source_dir" pull --ff-only origin main
+else
+  mkdir -p "$(dirname "$source_dir")"
+  git clone --branch main --single-branch "$repo_url" "$source_dir"
+fi
+
+test -f "$source_dir/SKILL.md"
+test ! -e "$source_dir/private" || { echo 'GitHub 源目录包含 private，停止。' >&2; exit 1; }
+test ! -e "$skill_dir/private" || { echo '现有全局 Skill 包含 private，停止更新。' >&2; exit 1; }
 stage_dir="$(mktemp -d)"
-unzip -q /path/to/seo-report-portal-v2-3.zip -d "$stage_dir"
-test -f "$stage_dir/seo-report-portal-v2-3/SKILL.md"
-test ! -e "$stage_dir/seo-report-portal-v2-3/private"
-skill_dir=~/.codex/skills/seo-report-portal-v2-3
-backup_dir=~/.codex/skill-backups/seo-report-portal-v2-3-pre-update-$(date +%Y%m%d%H%M%S)
-test ! -e "$skill_dir/private"
-mkdir -p "$(dirname "$backup_dir")"
-mv "$skill_dir" "$backup_dir"
-mv "$stage_dir/seo-report-portal-v2-3" "$skill_dir"
+git -C "$source_dir" archive --format=tar HEAD | tar -xf - -C "$stage_dir"
+test -f "$stage_dir/SKILL.md"
+test ! -e "$stage_dir/private" || { echo '暂存安装内容包含 private，停止。' >&2; exit 1; }
+mkdir -p "$(dirname "$backup_dir")" "$(dirname "$skill_dir")"
+if test -e "$skill_dir"; then mv "$skill_dir" "$backup_dir"; fi
+mv "$stage_dir" "$skill_dir"
 ```
 
-Windows 已安装版本更新：
+Windows 从 GitHub 更新：
 
 ```powershell
-$zip = 'C:\path\to\seo-report-portal-v2-3.zip'
-$stage = Join-Path $env:TEMP ('seo-report-portal-v2-3-' + [guid]::NewGuid())
+$repoUrl = 'https://github.com/LOG1124/seo-report-portal-v2-3.git'
+$source = Join-Path $env:USERPROFILE '.codex\sources\seo-report-portal-v2-3'
+$archive = Join-Path $env:TEMP ('seo-report-portal-v2-3-' + [guid]::NewGuid() + '.zip')
+$stage = Join-Path $env:TEMP ('seo-report-portal-v2-3-stage-' + [guid]::NewGuid())
 $skill = Join-Path $env:USERPROFILE '.codex\skills\seo-report-portal-v2-3'
 $backup = Join-Path $env:USERPROFILE ('.codex\skill-backups\seo-report-portal-v2-3-pre-update-' + (Get-Date -Format yyyyMMddHHmmss))
-Get-FileHash $zip -Algorithm SHA256
-Expand-Archive -LiteralPath $zip -DestinationPath $stage
-if (!(Test-Path (Join-Path $stage 'seo-report-portal-v2-3\SKILL.md'))) { throw '候选包缺少 SKILL.md' }
-if (Test-Path (Join-Path $stage 'seo-report-portal-v2-3\private')) { throw '候选包包含 private，停止更新' }
+
+if (Test-Path -LiteralPath $source) {
+    if (!(Test-Path -LiteralPath (Join-Path $source '.git') -PathType Container)) { throw '现有 GitHub 源目录不是 Git 工作副本，停止。' }
+    if (git -C $source status --porcelain) { throw 'GitHub 源目录有本地修改，停止。' }
+    git -C $source fetch --prune origin
+    git -C $source switch main
+    git -C $source pull --ff-only origin main
+} else {
+    New-Item -ItemType Directory -Force (Split-Path $source) | Out-Null
+    git clone --branch main --single-branch $repoUrl $source
+}
+
+if (!(Test-Path -LiteralPath (Join-Path $source 'SKILL.md') -PathType Leaf)) { throw 'GitHub 源目录缺少 SKILL.md' }
+if (Test-Path -LiteralPath (Join-Path $source 'private')) { throw 'GitHub 源目录包含 private，停止更新' }
 if (Test-Path (Join-Path $skill 'private')) { throw '现有全局 Skill 包含 private，停止更新' }
+New-Item -ItemType Directory -Force $stage | Out-Null
+git -C $source archive --format=zip --output $archive HEAD
+Expand-Archive -LiteralPath $archive -DestinationPath $stage
+if (!(Test-Path -LiteralPath (Join-Path $stage 'SKILL.md') -PathType Leaf)) { throw 'GitHub 暂存内容缺少 SKILL.md' }
+if (Test-Path -LiteralPath (Join-Path $stage 'private')) { throw 'GitHub 暂存内容包含 private，停止更新' }
 New-Item -ItemType Directory -Force (Split-Path $backup) | Out-Null
-Move-Item $skill $backup
-Move-Item (Join-Path $stage 'seo-report-portal-v2-3') $skill
+if (Test-Path -LiteralPath $skill) { Move-Item -LiteralPath $skill -Destination $backup }
+Move-Item -LiteralPath $stage -Destination $skill
+Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
 ```
 
-替换后重启 Codex，让新 Skill 生效；不需要重建客户工作区或重新填写任何密钥。出现问题时，将新目录移走，再把对应时间戳备份目录移回 `~/.codex/skills/seo-report-portal-v2-3`（Windows 使用同样的 `Move-Item`），然后重新启动 Codex。
+替换后重启 Codex，让新 Skill 生效；不需要重建客户工作区或重新填写任何密钥。出现问题时，将新目录移走，再把对应时间戳备份目录移回 `~/.codex/skills/seo-report-portal-v2-3`（Windows 使用同样的 `Move-Item`），然后重新启动 Codex。上述命令只删除临时 Git archive；不会删除任何旧 Skill、客户工作区或私密配置。
 
 ## 管理员先完成
 
