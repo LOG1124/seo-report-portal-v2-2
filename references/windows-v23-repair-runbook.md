@@ -8,6 +8,21 @@ title: Let Codex update v2.3 and recover local archives on Windows
 
 Attach this file to a new Codex task on the colleague’s Windows machine. Codex updates v2.3 from GitHub, tests the UNC share with synthetic data, and imports valid legacy archives from the current workspace. The colleague only approves narrowly scoped filesystem actions and restarts Codex after the final report.
 
+## What this task completes
+
+Codex installs the current GitHub `main` version of v2.3, runs the no-customer-data UNC safety test, and recovers eligible local v2.2 GA4 and GSC monthly archives to the shared source archive. The update includes the 小语种首页 display rule: only the unparameterized English homepage on the customer’s primary domain displays as `首页`; language homepages display their complete GSC URL in the next newly generated report.
+
+This task does not regenerate or publish a dashboard. It also does not collect missing Google data. A later, separately approved report run can use the imported archives.
+
+## What the colleague does
+
+1. Open a new Codex task from the affected customer workspace and attach this file
+2. Send: `请严格执行附件。完成后只返回最终中文汇总。`
+3. Approve only the file and Git actions described in this file
+4. Restart Codex after its final report
+
+If Codex reports that Git or `py -3` is missing, the colleague must arrange that prerequisite. Codex must not install software itself.
+
 ## Task instruction for Codex
 
 Complete this repair without asking the colleague to select customers, files, or months. Work in PowerShell and follow every boundary below.
