@@ -11,6 +11,7 @@ from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import urlparse
 
 from report_diagnostics import diagnostic
+from google_api_collector import ReadyArchive
 
 
 def _load(path: Path) -> Dict[str, Any]:
@@ -394,15 +395,16 @@ def _load_seoagent_strategy_archive(
 
 
 def build_dashboard_data(
-    archives: Iterable[Path], *, report_months: Optional[int] = 3,
+    archives: Iterable[Path | ReadyArchive], *, report_months: Optional[int] = 3,
     enrichment_archive_dir: Optional[Path] = None,
     seoagent_archive_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
     all_months = []
     source_domain = ""
     diagnostics: List[Dict[str, Any]] = []
-    for path in sorted(archives):
-        archive = _load(path)
+    for source in sorted(archives, key=lambda item: str(item.path if isinstance(item, ReadyArchive) else item)):
+        path = source.path if isinstance(source, ReadyArchive) else Path(source)
+        archive = source.payload if isinstance(source, ReadyArchive) else _load(path)
         archived_domain = str(archive.get("domain", "")).strip()
         if not archived_domain:
             raise ValueError(f"归档缺少域名：{path.name}")

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import calendar
 import sys
 import tempfile
 import unittest
@@ -14,6 +16,7 @@ PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE / "scripts"))
 
 from build_google_seo_dashboard import build_dashboard_data  # noqa: E402
+import generate_dashboard_report as report_generator  # noqa: E402
 from generate_dashboard_report import main as generate_report  # noqa: E402
 
 
@@ -55,6 +58,9 @@ class ReportPeriodAggregationTests(unittest.TestCase):
         directory.mkdir(parents=True, exist_ok=True)
         path = directory / f"{label}.json"
         path.write_text(json.dumps(payload), encoding="utf-8")
+        path.with_suffix(".json.ready").write_text(
+            json.dumps({"sha256": hashlib.sha256(path.read_bytes()).hexdigest()}), encoding="utf-8"
+        )
         return path
 
     def write_registry(self, root: Path) -> None:
@@ -62,12 +68,17 @@ class ReportPeriodAggregationTests(unittest.TestCase):
             "canonical_domain": "example.com", "portal_slug": "example-com", "status": "active",
         }]}), encoding="utf-8")
 
-    def write_google_archive(self, root: Path, month: str, payload: dict | None = None) -> Path:
-        payload = payload or archive(
-            "example.com", clicks=1, impressions=10, sessions=1, key_events=0,
-            channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
-        )
-        payload["period"] = [f"{month}-01", f"{month}-30"]
+    def write_google_archive(
+        self, root: Path, month: str, payload: dict | None = None, *, preserve_period: bool = False
+    ) -> Path:
+        if payload is None:
+            payload = archive(
+                "example.com", clicks=1, impressions=10, sessions=1, key_events=0,
+                channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
+            )
+        if not preserve_period:
+            year, month_number = (int(part) for part in month.split("-"))
+            payload["period"] = [f"{month}-01", f"{month}-{calendar.monthrange(year, month_number)[1]:02d}"]
         return self.write_archive(root / "ga4-gsc" / "example.com", month, payload)
 
     def generation_args(self, root: Path, month: str, report_type: str = "monthly", end_month: str | None = None) -> list[str]:
@@ -136,10 +147,13 @@ class ReportPeriodAggregationTests(unittest.TestCase):
                     channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
                 ))
             for label in ("2026-03", "2026-04", "2026-05"):
-                self.write_archive(root / "ga4-gsc" / "example.com", label, archive(
+                previous = archive(
                     "other.example", clicks=1, impressions=10, sessions=1, key_events=0,
                     channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
-                ))
+                )
+                year, month_number = (int(part) for part in label.split("-"))
+                previous["period"] = [f"{label}-01", f"{label}-{calendar.monthrange(year, month_number)[1]:02d}"]
+                self.write_archive(root / "ga4-gsc" / "example.com", label, previous)
             template = root / "template.html"
             template.write_text('<script id="google-seo-data" type="application/json">{}</script>', encoding="utf-8")
             args = self.generation_args(root, "2026-06", "quarterly", "2026-08")
@@ -158,6 +172,16 @@ class ReportPeriodAggregationTests(unittest.TestCase):
             args = self.generation_args(root, "2026-06")
             with patch.object(sys, "argv", args):
                 with self.assertRaisesRegex(ValueError, "缺少对比期月度归档"):
+                    generate_report()
+
+    def test_unready_current_archive_blocks_report_generation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_registry(root)
+            current = self.write_google_archive(root, "2026-06")
+            current.with_suffix(".json.ready").unlink()
+            with patch.object(sys, "argv", self.generation_args(root, "2026-06") + ["--allow-current-only"]):
+                with self.assertRaisesRegex(ValueError, "尚未就绪"):
                     generate_report()
 
     def test_allow_current_only_writes_exception_sidecar(self) -> None:
@@ -187,8 +211,38 @@ class ReportPeriodAggregationTests(unittest.TestCase):
             self.assertEqual([item["role"] for item in usage["archives"]], ["current", "previous"])
             self.assertTrue(all(len(item["sha256"]) == 64 for item in usage["archives"]))
 
-    def test_user_selected_in_progress_month_generates_without_preview_label(self) -> None:
-        """A present-month archive is publishable as the requested period, not silently reclassified."""
+    def test_generation_uses_reader_snapshot_after_source_replacement(self) -> None:
+        """A source changed after the reader returns cannot alter this report's in-memory aggregate."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_registry(root)
+            self.write_google_archive(root, "2026-06", archive(
+                "example.com", clicks=1, impressions=10, sessions=1, key_events=0,
+                channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
+            ))
+            original_reader = report_generator.read_ready_complete_month_archive
+
+            def read_then_replace(*args: object):
+                snapshot = original_reader(*args)
+                if args[-1] == "2026-06":
+                    replacement = archive(
+                        "example.com", clicks=99, impressions=100, sessions=99, key_events=0,
+                        channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 99, "keyEvents": 0}],
+                    )
+                    replacement["period"] = ["2026-06-01", "2026-06-30"]
+                    snapshot.path.write_text(json.dumps(replacement), encoding="utf-8")
+                    snapshot.path.with_suffix(".json.ready").write_text(
+                        json.dumps({"sha256": hashlib.sha256(snapshot.path.read_bytes()).hexdigest()}), encoding="utf-8"
+                    )
+                return snapshot
+
+            with patch.object(report_generator, "read_ready_complete_month_archive", side_effect=read_then_replace), patch.object(sys, "argv", self.generation_args(root, "2026-06") + ["--allow-current-only"]):
+                self.assertEqual(generate_report(), 0)
+            data = json.loads((root / "dashboards" / "example.com" / "monthly" / "2026-06" / "dashboard-data.json").read_text(encoding="utf-8"))
+            self.assertEqual(data["months"][0]["metrics"]["clicks"], 1)
+
+    def test_user_selected_month_uses_complete_source_period_without_preview_label(self) -> None:
+        """The requested report period is unchanged when its stored source is a complete calendar month."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_registry(root)
@@ -196,7 +250,7 @@ class ReportPeriodAggregationTests(unittest.TestCase):
                 "example.com", clicks=1, impressions=10, sessions=1, key_events=0,
                 channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
             )
-            current["period"] = ["2026-08-01", "2026-08-25"]
+            current["period"] = ["2026-08-01", "2026-08-31"]
             self.write_google_archive(root, "2026-08", current)
             output_root = root / "dashboards"
             args = self.generation_args(root, "2026-08") + ["--allow-current-only"]
@@ -206,6 +260,20 @@ class ReportPeriodAggregationTests(unittest.TestCase):
             payload = json.loads((report_dir / "dashboard-data.json").read_text(encoding="utf-8"))
             self.assertEqual(payload["report"]["selectedMonths"], ["2026-08"])
             self.assertNotIn("预览", (report_dir / "summary.md").read_text(encoding="utf-8"))
+
+    def test_incomplete_stored_month_is_rejected_even_with_a_matching_ready_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_registry(root)
+            partial = archive(
+                "example.com", clicks=1, impressions=10, sessions=1, key_events=0,
+                channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
+            )
+            partial["period"] = ["2026-08-01", "2026-08-25"]
+            self.write_google_archive(root, "2026-08", partial, preserve_period=True)
+            with patch.object(sys, "argv", self.generation_args(root, "2026-08") + ["--allow-current-only"]):
+                with self.assertRaisesRegex(ValueError, "归档周期必须是指定自然月"):
+                    generate_report()
 
 
 if __name__ == "__main__":

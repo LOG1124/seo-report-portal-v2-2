@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from build_google_seo_dashboard import _domain_brand_token, _normalise_strategy_opportunities, build_dashboard_data
-from customer_registry import google_archive_path, require_active_customer
+from customer_registry import require_active_customer
+from google_api_collector import ReadyArchive, read_ready_complete_month_archive
 from report_diagnostics import diagnostic, write_diagnostics
 from source_archive_usage import write_usage
 from validate_report_artifact import validate_report_artifact, validate_report_tree
@@ -37,16 +38,20 @@ def fail(message: str) -> None:
     raise ValueError(message)
 
 
-def validate_archive_domains(paths: List[Path], expected_domain: str, *, required: bool) -> None:
-    """Reject cross-client archives before they reach any report comparison aggregate."""
-    for path in paths:
-        if not path.exists():
+def read_archives(archive_root: Path, domain: str, months: List[str], *, required: bool) -> tuple[List[ReadyArchive], List[str]]:
+    """Read each source month once; optional comparison months may be absent only as a group."""
+    snapshots: List[ReadyArchive] = []
+    missing: List[str] = []
+    for month in months:
+        try:
+            snapshots.append(read_ready_complete_month_archive(archive_root, domain, month))
+        except FileNotFoundError:
             if required:
-                fail(f"缺少月度归档：{path.stem}")
-            continue
-        archived_domain = json.loads(path.read_text(encoding="utf-8")).get("domain")
-        if archived_domain != expected_domain:
-            fail(f"归档域名不匹配：{path.name} 属于 {archived_domain or '未标注域名'}，不是 {expected_domain}")
+                fail(f"缺少月度归档：{month}")
+            missing.append(month)
+        except ValueError as exc:
+            fail(str(exc))
+    return snapshots, missing
 
 
 def standalone_document(fragment: str) -> str:
@@ -463,20 +468,16 @@ def main() -> int:
         fail("月度报告只能包含一个月份")
     record = require_active_customer(archive_root, args.domain)
     domain = record.canonical_domain
-    archives = [google_archive_path(archive_root, record, month) for month in requested]
-    missing = [path.stem for path in archives if not path.exists()]
-    if missing:
-        fail(f"缺少月度归档：{', '.join(missing)}")
-    validate_archive_domains(archives, domain, required=True)
+    archives, _ = read_archives(archive_root, domain, requested, required=True)
 
     type_labels = {"monthly": "月度报告", "quarterly": "季度报告", "yearly": "年度报告"}
     comparison_labels = {"monthly": "上月", "quarterly": "上个季度", "yearly": "上一年度"}
     previous_requested = month_range(shift_month(requested[0], -len(requested)), shift_month(requested[0], -1))
-    previous_archives = [google_archive_path(archive_root, record, month) for month in previous_requested]
-    missing_previous_months = [month for month, path in zip(previous_requested, previous_archives) if not path.is_file()]
+    previous_archives, missing_previous_months = read_archives(
+        archive_root, domain, previous_requested, required=False
+    )
     if missing_previous_months and not args.allow_current_only:
         fail(f"缺少对比期月度归档：{', '.join(missing_previous_months)}")
-    validate_archive_domains(previous_archives, domain, required=not missing_previous_months)
     previous_available = not missing_previous_months
     comparison_mode = "complete" if previous_available else "current_only_exception"
     enrichment_archive_dir = args.dataforseo_archive_dir

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import calendar
 import sys
 import tempfile
 import unittest
@@ -20,6 +22,10 @@ class SourceArchiveUsageTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name) / "archive-root"
+        self.root.mkdir()
+        (self.root / "customer-registry.json").write_text(json.dumps({"customers": [{
+            "canonical_domain": "example.com", "portal_slug": "example-com", "status": "active",
+        }]}), encoding="utf-8")
         self.record = CustomerRecord("example.com", "example-com", "active")
         self.report_dir = Path(self.tmp.name) / "report"
         self.report_dir.mkdir()
@@ -30,7 +36,15 @@ class SourceArchiveUsageTests(unittest.TestCase):
     def archive(self, month: str, domain: str = "example.com") -> Path:
         path = self.root / "ga4-gsc" / "example.com" / f"{month}.json"
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps({"domain": domain, "period": [f"{month}-01", f"{month}-30"]}), encoding="utf-8")
+        year, month_number = (int(part) for part in month.split("-"))
+        path.write_text(json.dumps({
+            "domain": domain,
+            "period": [f"{month}-01", f"{month}-{calendar.monthrange(year, month_number)[1]:02d}"],
+            "ga4": {"session_count": 1}, "gsc": {"organic_clicks": 1},
+        }), encoding="utf-8")
+        path.with_suffix(".json.ready").write_text(
+            json.dumps({"sha256": hashlib.sha256(path.read_bytes()).hexdigest()}), encoding="utf-8"
+        )
         return path
 
     def other_customer_archive(self, month: str) -> Path:
@@ -92,6 +106,12 @@ class SourceArchiveUsageTests(unittest.TestCase):
         self.write_complete_usage()
         self.archive("2026-06").unlink()
 
+        with self.assertRaisesRegex(ValueError, "SHA-256 不一致"):
+            verify_usage(self.report_dir, self.root, self.record, "monthly", "2026-06", False)
+
+    def test_rejects_unready_source_archive(self) -> None:
+        self.write_complete_usage()
+        self.archive("2026-06").with_suffix(".json.ready").unlink()
         with self.assertRaisesRegex(ValueError, "SHA-256 不一致"):
             verify_usage(self.report_dir, self.root, self.record, "monthly", "2026-06", False)
 

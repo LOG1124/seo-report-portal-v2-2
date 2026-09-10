@@ -1,5 +1,6 @@
 import json
 import io
+import hashlib
 import os
 import socket
 import sys
@@ -16,7 +17,7 @@ PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE / "scripts"))
 
 import google_api_collector  # noqa: E402
-from google_api_collector import main, save_new_month_archive  # noqa: E402
+from google_api_collector import main, read_ready_complete_month_archive, save_new_month_archive  # noqa: E402
 
 
 def write_registry(root: Path, domain: str, slug: str) -> None:
@@ -37,6 +38,25 @@ def write_registry(root: Path, domain: str, slug: str) -> None:
 
 
 class GoogleArchiveStorageTest(unittest.TestCase):
+    def test_ready_reader_binds_one_complete_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_registry(root, "example.com", "example-com")
+            original = {
+                "domain": "example.com", "period": ["2026-07-01", "2026-07-31"],
+                "ga4": {"session_count": 1}, "gsc": {"organic_clicks": 1},
+            }
+            path = save_new_month_archive(root, "example.com", "2026-07", original)
+            snapshot = read_ready_complete_month_archive(root, "example.com", "2026-07")
+            replacement = {**original, "ga4": {"session_count": 99}}
+            content = json.dumps(replacement).encode("utf-8")
+            path.write_bytes(content)
+            path.with_suffix(".json.ready").write_text(
+                json.dumps({"sha256": hashlib.sha256(content).hexdigest()}), encoding="utf-8"
+            )
+            self.assertEqual(snapshot.payload["ga4"]["session_count"], 1)
+            self.assertEqual(snapshot.sha256, hashlib.sha256(snapshot.content).hexdigest())
+
     def test_existing_month_preserves_original_bytes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -56,6 +76,10 @@ class GoogleArchiveStorageTest(unittest.TestCase):
 
             self.assertEqual(path, root / "ga4-gsc" / "example.com" / "2026-07.json")
             self.assertEqual(path.read_bytes(), original)
+            self.assertEqual(
+                json.loads(path.with_suffix(".json.ready").read_text(encoding="utf-8")),
+                {"sha256": hashlib.sha256(original).hexdigest()},
+            )
 
     def test_final_path_created_after_check_is_not_replaced(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -63,12 +87,15 @@ class GoogleArchiveStorageTest(unittest.TestCase):
             write_registry(root, "example.com", "example-com")
             archive_path = root / "ga4-gsc" / "example.com" / "2026-07.json"
             original = b'{"written_by":"another_writer"}\n'
-            original_link = os.link
+            original_write = google_api_collector._exclusive_write
 
-            def create_final_before_link(source, destination, *args, **kwargs):
+            def create_final_before_write(destination, content, *args, **kwargs):
                 if Path(destination) == archive_path:
                     archive_path.write_bytes(original)
-                return original_link(source, destination, *args, **kwargs)
+                    archive_path.with_suffix(".json.ready").write_text(
+                        json.dumps({"sha256": hashlib.sha256(original).hexdigest()}), encoding="utf-8"
+                    )
+                return original_write(destination, content, *args, **kwargs)
 
             payload = {
                 "domain": "example.com",
@@ -76,7 +103,7 @@ class GoogleArchiveStorageTest(unittest.TestCase):
                 "ga4": {"session_count": 1},
                 "gsc": {"organic_clicks": 1},
             }
-            with patch.object(os, "link", new=create_final_before_link):
+            with patch.object(google_api_collector, "_exclusive_write", new=create_final_before_write):
                 with self.assertRaisesRegex(FileExistsError, "档案已存在，未改写"):
                     save_new_month_archive(root, "example.com", "2026-07", payload)
 
@@ -89,12 +116,12 @@ class GoogleArchiveStorageTest(unittest.TestCase):
             root = Path(tmp)
             write_registry(root, "example.com", "example-com")
             archive_path = root / "ga4-gsc" / "example.com" / "2026-07.json"
-            original_link = os.link
+            original_write = google_api_collector._exclusive_write
 
-            def fail_final_link(source, destination, *args, **kwargs):
+            def fail_final_write(destination, content, *args, **kwargs):
                 if Path(destination) == archive_path:
                     raise OSError("simulated SMB failure")
-                return original_link(source, destination, *args, **kwargs)
+                return original_write(destination, content, *args, **kwargs)
 
             payload = {
                 "domain": "example.com",
@@ -102,13 +129,39 @@ class GoogleArchiveStorageTest(unittest.TestCase):
                 "ga4": {"session_count": 1},
                 "gsc": {"organic_clicks": 1},
             }
-            with patch.object(os, "link", new=fail_final_link):
-                with self.assertRaisesRegex(OSError, "未创建目标"):
+            with patch.object(google_api_collector, "_exclusive_write", new=fail_final_write):
+                with self.assertRaisesRegex(OSError, "simulated SMB failure"):
                     save_new_month_archive(root, "example.com", "2026-07", payload)
 
             self.assertFalse(archive_path.exists())
             self.assertFalse(archive_path.with_suffix(".json.lock").exists())
             self.assertFalse(list(archive_path.parent.glob("*.tmp")))
+
+    def test_partial_json_write_keeps_lock_and_never_creates_ready_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_registry(root, "example.com", "example-com")
+            archive_path = root / "ga4-gsc" / "example.com" / "2026-07.json"
+            original_write = google_api_collector._exclusive_write
+
+            def leave_partial_json(destination, content, *args, **kwargs):
+                if Path(destination) == archive_path:
+                    with archive_path.open("xb") as handle:
+                        handle.write(b'{"partial":')
+                    raise OSError("simulated SMB interrupted write")
+                return original_write(destination, content, *args, **kwargs)
+
+            payload = {
+                "domain": "example.com", "period": ["2026-07-01", "2026-07-31"],
+                "ga4": {"session_count": 1}, "gsc": {"organic_clicks": 1},
+            }
+            with patch.object(google_api_collector, "_exclusive_write", new=leave_partial_json):
+                with self.assertRaisesRegex(OSError, "interrupted write"):
+                    save_new_month_archive(root, "example.com", "2026-07", payload)
+
+            self.assertTrue(archive_path.is_file())
+            self.assertTrue(archive_path.with_suffix(".json.lock").is_file())
+            self.assertFalse(archive_path.with_suffix(".json.ready").exists())
 
     def test_lock_contains_provenance_while_writer_runs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -117,10 +170,10 @@ class GoogleArchiveStorageTest(unittest.TestCase):
             archive_path = root / "ga4-gsc" / "example.com" / "2026-07.json"
             lock = archive_path.with_suffix(".json.lock")
             observed = {}
-            original_link = os.link
+            original_write = google_api_collector._exclusive_write
 
-            def capture_lock(source, destination, *args, **kwargs):
-                result = original_link(source, destination, *args, **kwargs)
+            def capture_lock(destination, content, *args, **kwargs):
+                result = original_write(destination, content, *args, **kwargs)
                 if Path(destination) == lock:
                     observed.update(json.loads(lock.read_text(encoding="utf-8")))
                 return result
@@ -131,7 +184,7 @@ class GoogleArchiveStorageTest(unittest.TestCase):
                 "ga4": {"session_count": 1},
                 "gsc": {"organic_clicks": 1},
             }
-            with patch.object(os, "link", new=capture_lock):
+            with patch.object(google_api_collector, "_exclusive_write", new=capture_lock):
                 save_new_month_archive(root, "example.com", "2026-07", payload)
 
             self.assertEqual(observed["hostname"], socket.gethostname())
@@ -189,6 +242,26 @@ class GoogleArchiveStorageTest(unittest.TestCase):
                 )
 
             self.assertFalse((root / "ga4-gsc").exists())
+
+    def test_incomplete_existing_target_or_ready_marker_is_never_repaired(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_registry(root, "example.com", "example-com")
+            path = root / "ga4-gsc" / "example.com" / "2026-07.json"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b'{"partial":true}')
+            payload = {
+                "domain": "example.com", "period": ["2026-07-01", "2026-07-31"],
+                "ga4": {"session_count": 1}, "gsc": {"organic_clicks": 1},
+            }
+            with self.assertRaisesRegex(ValueError, "缺少 ready 标记"):
+                save_new_month_archive(root, "example.com", "2026-07", payload)
+            self.assertEqual(path.read_bytes(), b'{"partial":true}')
+
+            path.unlink()
+            path.with_suffix(".json.ready").write_text('{"sha256":"0"}', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "ready 标记缺少 JSON"):
+                save_new_month_archive(root, "example.com", "2026-07", payload)
 
 
 class GoogleArchiveArgumentContractTest(unittest.TestCase):

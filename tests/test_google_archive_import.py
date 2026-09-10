@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import sys
 import tempfile
 import unittest
@@ -65,6 +66,9 @@ class GoogleArchiveImportTest(unittest.TestCase):
             target = root / "ga4-gsc" / "example.com" / "2026-07.json"
             target.parent.mkdir(parents=True)
             target.write_bytes(b'{"original":true}\n')
+            target.with_suffix(".json.ready").write_text(
+                json.dumps({"sha256": hashlib.sha256(target.read_bytes()).hexdigest()}), encoding="utf-8"
+            )
             with self.assertRaisesRegex(FileExistsError, "档案已存在，未改写"):
                 self.run_import(root, source)
             self.assertEqual(target.read_bytes(), b'{"original":true}\n')

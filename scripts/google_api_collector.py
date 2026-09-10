@@ -5,12 +5,13 @@ from __future__ import annotations
 
 import argparse
 import calendar
+import hashlib
 import json
 import os
 import re
 import socket
 import sys
-import uuid
+from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
@@ -435,30 +436,84 @@ def validate_complete_month_archive(
     return record, path
 
 
-def _temporary_bytes(path: Path, content: bytes) -> Path:
-    """Write and sync complete bytes beside their eventual path."""
-    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+READY_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+@dataclass(frozen=True)
+class ReadyArchive:
+    """One verified, in-memory source archive snapshot."""
+
+    record: Any
+    path: Path
+    content: bytes
+    sha256: str
+    payload: Dict[str, Any]
+
+
+def ready_path(path: Path) -> Path:
+    """Return the non-public digest marker that makes a source archive readable."""
+    return Path(path).with_suffix(".json.ready")
+
+
+def _sha256_bytes(content: bytes) -> str:
+    return hashlib.sha256(content).hexdigest()
+
+
+def _exclusive_write(path: Path, content: bytes, *, exists_message: str) -> None:
+    """Create one file once and flush its full bytes before the caller proceeds."""
     try:
-        with temporary.open("xb") as handle:
+        with path.open("xb") as handle:
             handle.write(content)
             handle.flush()
             os.fsync(handle.fileno())
-    except BaseException:
-        temporary.unlink(missing_ok=True)
-        raise
-    return temporary
-
-
-def _link_new(source: Path, destination: Path, *, exists_message: str) -> None:
-    """Atomically create destination from a complete same-directory file, or fail safe."""
-    try:
-        os.link(source, destination)
     except FileExistsError as exc:
         raise FileExistsError(exists_message) from exc
-    except OSError as exc:
-        raise OSError(
-            f"文件系统不支持安全的不可覆盖归档提交，未创建目标：{destination}"
-        ) from exc
+
+
+def read_ready_archive_bytes(path: Path) -> tuple[bytes, str]:
+    """Read one JSON snapshot and accept it only when its ready marker matches it."""
+    path = Path(path)
+    ready = ready_path(path)
+    if not path.is_file():
+        if ready.exists():
+            raise ValueError(f"原始档案 ready 标记缺少 JSON：{ready}")
+        raise FileNotFoundError(f"缺少月度归档：{path}")
+    if not ready.is_file():
+        raise ValueError(f"原始档案尚未就绪或 ready 标记异常：{path}")
+    try:
+        marker = json.loads(ready.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"原始档案 ready 标记无效：{ready}") from exc
+    expected = marker.get("sha256") if isinstance(marker, dict) else None
+    if not isinstance(expected, str) or not READY_SHA256_RE.fullmatch(expected):
+        raise ValueError(f"原始档案 ready 标记无效：{ready}")
+    content = path.read_bytes()
+    actual = _sha256_bytes(content)
+    if actual != expected:
+        raise ValueError(f"原始档案 ready SHA-256 不一致：{path}")
+    return content, actual
+
+
+def verify_ready_archive(path: Path) -> str:
+    """Return a source digest only when its non-public ready marker proves its bytes."""
+    _, digest = read_ready_archive_bytes(path)
+    return digest
+
+
+def read_ready_complete_month_archive(archive_root: Path, domain: str, month: str) -> ReadyArchive:
+    """Return one ready, registered, complete natural-month archive without reopening it."""
+    root = Path(archive_root).resolve()
+    record = require_active_customer(root, domain)
+    path = google_archive_path(root, record, month)
+    content, digest = read_ready_archive_bytes(path)
+    try:
+        payload = json.loads(content.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"原始档案 JSON 无效：{path}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("归档 JSON 必须是对象")
+    validate_complete_month_archive(root, record.canonical_domain, month, payload)
+    return ReadyArchive(record, path, content, digest, payload)
 
 
 def _lock_payload() -> bytes:
@@ -469,54 +524,66 @@ def _lock_payload() -> bytes:
     }, ensure_ascii=False) + "\n").encode("utf-8")
 
 
+def _ready_payload(content: bytes) -> bytes:
+    return (json.dumps({"sha256": _sha256_bytes(content)}, ensure_ascii=False) + "\n").encode("utf-8")
+
+
+def _reject_existing_archive_state(path: Path) -> None:
+    """Never overwrite a completed archive or attempt to repair an incomplete one."""
+    ready = ready_path(path)
+    if path.exists() and ready.exists():
+        verify_ready_archive(path)
+        raise FileExistsError(f"档案已存在，未改写：{path}")
+    if path.exists():
+        raise ValueError(f"原始档案缺少 ready 标记，需维护负责人处理：{path}")
+    if ready.exists():
+        raise ValueError(f"原始档案 ready 标记缺少 JSON，需维护负责人处理：{ready}")
+
+
 def write_new_archive_bytes(path: Path, content: bytes) -> Path:
-    """Create a complete immutable archive with a provenance-bearing lock."""
+    """Create an immutable archive, then its digest marker, under a provenance lock."""
     path.parent.mkdir(parents=True, exist_ok=True)
     lock = path.with_suffix(".json.lock")
-    lock_temporary = _temporary_bytes(lock, _lock_payload())
     lock_acquired = False
-    content_temporary: Optional[Path] = None
     committed = False
+    preserve_lock = False
     try:
-        _link_new(
-            lock_temporary, lock,
-            exists_message=f"该月份正在归档或需人工检查锁文件：{lock}",
-        )
+        _exclusive_write(lock, _lock_payload(), exists_message=f"该月份正在归档或需人工检查锁文件：{lock}")
         lock_acquired = True
-        if path.exists():
-            raise FileExistsError(f"档案已存在，未改写：{path}")
-        content_temporary = _temporary_bytes(path, content)
-        _link_new(content_temporary, path, exists_message=f"档案已存在，未改写：{path}")
+        _reject_existing_archive_state(path)
+        # Once exclusive creation starts, a failed SMB write can leave a partial
+        # JSON. Retain the provenance lock so it cannot be mistaken for usable.
+        preserve_lock = True
+        try:
+            _exclusive_write(path, content, exists_message=f"档案已存在，未改写：{path}")
+        except FileExistsError:
+            try:
+                _reject_existing_archive_state(path)
+            except FileExistsError:
+                preserve_lock = False
+                raise
+            raise
+        # A JSON without this marker is intentionally unreadable. Keep its lock
+        # if marker creation fails so a maintainer can inspect the exact state.
+        preserve_lock = True
+        _exclusive_write(
+            ready_path(path), _ready_payload(content),
+            exists_message=f"原始档案 ready 标记已存在，需维护负责人处理：{ready_path(path)}",
+        )
         committed = True
         return path
     finally:
         if committed:
-            cleanup_paths = [item for item in (content_temporary, lock_temporary) if item is not None]
-            for cleanup_path in cleanup_paths:
-                try:
-                    cleanup_path.unlink(missing_ok=True)
-                except OSError as exc:
-                    print(
-                        f"警告：原始档案已提交：{path}；无法清理 {cleanup_path}（{exc}）。"
-                        f"保留锁 {lock} 供维护负责人按目标已存在流程复核。",
-                        file=sys.stderr,
-                    )
-                    break
-            else:
-                try:
-                    lock.unlink(missing_ok=True)
-                except OSError as exc:
-                    print(
-                        f"警告：原始档案已提交：{path}；无法清理 {lock}（{exc}）。"
-                        f"保留锁供维护负责人按目标已存在流程复核。",
-                        file=sys.stderr,
-                    )
-        else:
-            lock_temporary.unlink(missing_ok=True)
-            if content_temporary is not None:
-                content_temporary.unlink(missing_ok=True)
-            if lock_acquired:
+            try:
                 lock.unlink(missing_ok=True)
+            except OSError as exc:
+                print(
+                    f"警告：原始档案已提交：{path}；无法清理 {lock}（{exc}）。"
+                    "保留锁供维护负责人按目标已存在流程复核。",
+                    file=sys.stderr,
+                )
+        elif lock_acquired and (not preserve_lock or not path.exists()):
+            lock.unlink(missing_ok=True)
 
 
 def save_new_month_archive(archive_root: Path, domain: str, month: str, payload: Dict[str, Any]) -> Path:

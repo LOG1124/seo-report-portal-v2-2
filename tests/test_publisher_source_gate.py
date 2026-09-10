@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import calendar
 import sys
 import tempfile
 import unittest
@@ -68,7 +70,15 @@ class PublisherSourceGateTests(unittest.TestCase):
     def _archive(self, month: str = "2026-06") -> Path:
         archive = self.source_root / "ga4-gsc" / "example.com" / f"{month}.json"
         archive.parent.mkdir(parents=True, exist_ok=True)
-        archive.write_text(json.dumps({"domain": "example.com"}), encoding="utf-8")
+        year, month_number = (int(part) for part in month.split("-"))
+        archive.write_text(json.dumps({
+            "domain": "example.com",
+            "period": [f"{month}-01", f"{month}-{calendar.monthrange(year, month_number)[1]:02d}"],
+            "ga4": {"session_count": 1}, "gsc": {"organic_clicks": 1},
+        }), encoding="utf-8")
+        archive.with_suffix(".json.ready").write_text(
+            json.dumps({"sha256": hashlib.sha256(archive.read_bytes()).hexdigest()}), encoding="utf-8"
+        )
         return archive
 
     def _write_usage(self, *, current_only: bool = False) -> Path:

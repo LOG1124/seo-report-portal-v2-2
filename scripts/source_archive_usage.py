@@ -7,7 +7,8 @@ import json
 from pathlib import Path, PureWindowsPath
 from typing import Any
 
-from customer_registry import CustomerRecord
+from customer_registry import CustomerRecord, google_archive_path
+from google_api_collector import ReadyArchive, read_ready_complete_month_archive
 
 
 USAGE_FILE = "source-archive-usage.json"
@@ -21,13 +22,24 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def usage_entry(archive_root: Path, role: str, path: Path) -> dict[str, str]:
+def _snapshot(archive_root: Path, record: CustomerRecord, value: Path | ReadyArchive) -> ReadyArchive:
+    if isinstance(value, ReadyArchive):
+        expected = google_archive_path(archive_root, record, value.path.stem).resolve()
+        if value.path.resolve() != expected or value.record != record:
+            raise ValueError("来源使用记录包含其他客户档案")
+        return value
+    path = Path(value)
+    return read_ready_complete_month_archive(archive_root, record.canonical_domain, path.stem)
+
+
+def usage_entry(archive_root: Path, record: CustomerRecord, role: str, value: Path | ReadyArchive) -> dict[str, str]:
     root = Path(archive_root).resolve()
-    resolved = Path(path).resolve()
+    snapshot = _snapshot(root, record, value)
+    resolved = snapshot.path.resolve()
     return {
         "role": role,
         "relative_path": str(resolved.relative_to(root)),
-        "sha256": sha256(resolved),
+        "sha256": snapshot.sha256,
     }
 
 
@@ -37,8 +49,8 @@ def write_usage(
     record: CustomerRecord,
     report_type: str,
     label: str,
-    current: list[Path],
-    previous: list[Path],
+    current: list[Path | ReadyArchive],
+    previous: list[Path | ReadyArchive],
     comparison_mode: str,
 ) -> Path:
     payload = {
@@ -48,8 +60,8 @@ def write_usage(
         "label": label,
         "comparison_mode": comparison_mode,
         "archives": [
-            *(usage_entry(archive_root, "current", path) for path in current),
-            *(usage_entry(archive_root, "previous", path) for path in previous),
+            *(usage_entry(archive_root, record, "current", path) for path in current),
+            *(usage_entry(archive_root, record, "previous", path) for path in previous),
         ],
     }
     path = Path(report_dir) / USAGE_FILE
@@ -118,12 +130,10 @@ def verify_usage(
             source.relative_to(customer_root)
         except ValueError as exc:
             raise ValueError("来源使用记录包含其他客户档案") from exc
-        if not source.is_file() or sha256(source) != item["sha256"]:
-            raise ValueError("源档案 SHA-256 不一致")
         try:
-            archived_domain = json.loads(source.read_text(encoding="utf-8")).get("domain")
-        except (OSError, json.JSONDecodeError) as exc:
-            raise ValueError("源档案身份不一致") from exc
-        if archived_domain != record.canonical_domain:
-            raise ValueError("源档案身份不一致")
+            snapshot = read_ready_complete_month_archive(archive_root, record.canonical_domain, source.stem)
+        except (FileNotFoundError, ValueError) as exc:
+            raise ValueError("源档案 SHA-256 不一致或尚未就绪") from exc
+        if snapshot.path.resolve() != source or snapshot.sha256 != item["sha256"]:
+            raise ValueError("源档案 SHA-256 不一致")
     return payload

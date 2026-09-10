@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import calendar
 import sys
 import tempfile
 import unittest
@@ -117,8 +119,17 @@ class PackageSmokeTests(unittest.TestCase):
             source = source_root / "ga4-gsc" / "example.com" / "2026-06.json"
             previous = source_root / "ga4-gsc" / "example.com" / "2026-05.json"
             source.parent.mkdir(parents=True)
-            source.write_text(json.dumps({"domain": "example.com"}), encoding="utf-8")
-            previous.write_text(json.dumps({"domain": "example.com"}), encoding="utf-8")
+            for archive in (source, previous):
+                month = archive.stem
+                year, month_number = (int(part) for part in month.split("-"))
+                archive.write_text(json.dumps({
+                    "domain": "example.com",
+                    "period": [f"{month}-01", f"{month}-{calendar.monthrange(year, month_number)[1]:02d}"],
+                    "ga4": {"session_count": 1}, "gsc": {"organic_clicks": 1},
+                }), encoding="utf-8")
+                archive.with_suffix(".json.ready").write_text(
+                    json.dumps({"sha256": hashlib.sha256(archive.read_bytes()).hexdigest()}), encoding="utf-8"
+                )
             write_usage(
                 report_dir, source_root, CustomerRecord("example.com", "example-com", "active"),
                 "monthly", "2026-06", [source], [previous], "complete",

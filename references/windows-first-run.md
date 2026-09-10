@@ -28,7 +28,7 @@ if (-not (Test-Path 'config\dataforseo-trial.json')) {
 
 ## 2. 连接 SMB 公盘
 
-优先将公司 SMB 公盘映射为固定盘符，例如 `Z:`；也可使用 UNC 路径。共享盘为 guest 读写，故原始 GA4/GSC 档案**不是保密存储位置**。首次路径预检只确认能打开指定根目录，不要用真实归档文件测试写入。
+优先将公司 SMB 公盘映射为固定盘符，例如 `Z:`；也可使用 UNC 路径。共享盘为 guest 读写，故原始 GA4/GSC 档案**不是保密或抗恶意篡改的存储位置**。`.ready` 标记只用于拒绝半成品和意外不一致，不能防止可写者同时重写 JSON 与标记。首次路径预检只确认能打开指定根目录，不要用真实归档文件测试写入。
 
 在 `private\oss.env` 中填写**一种**本机路径：
 
@@ -65,9 +65,9 @@ py -3 "$skill\scripts\publish_oss_report.py" --local-report-dir .\output\dashboa
 py -3 "$skill\scripts\import_google_archive.py" --archive-root 'Z:\seo-report-source-archive' --source-file 'C:\legacy\example.com\2026-07.json' --month 2026-07
 ```
 
-导入只复制、不移动或删除本机旧 JSON，且不会覆盖已有目标。来源只能是旧版 GA4/GSC 原始 JSON，绝不能是 `dashboard-data.json`、`summary.md` 或 `index.html`。它会拒绝缺少 GA4、GSC、正确客户或自然月的文件。对 UNC，只把两处盘符路径替换为对应的单引号 UNC 路径。
+导入只复制、不移动或删除本机旧 JSON，且不会覆盖已有目标。来源只能是旧版 GA4/GSC 原始 JSON，绝不能是 `dashboard-data.json`、`summary.md` 或 `index.html`。它会拒绝缺少 GA4、GSC、正确客户或自然月的文件；JSON 完整写入并同步后，才会独占写入同名非公开 `.json.ready` SHA-256 标记。报告、发布和自动选词只读取这两个文件均存在且哈希一致、存储周期恰为指定自然月的同一份内存快照。对 UNC，只把两处盘符路径替换为对应的单引号 UNC 路径。
 
-如果命令提示某月份存在 `YYYY-MM.json.lock`，立即停止；它记录写入机器、进程与 UTC 开始时间。不要由普通同事删除锁，更不要删除、改名或手工补写目标 JSON。**只有指定维护负责人**在确认所有同事的采集/导入任务均已结束并已保存锁文件内容作为故障记录后，才可恢复：目标 `YYYY-MM.json` **不存在**时，才可移走遗留锁并重新运行原命令；目标**已经存在**时，可能是不可覆盖提交已完成但清理失败，先独立核对目标 SHA-256（导入时须与本机源 JSON 相同）并记录结果，保留目标文件，随后才可移走锁。若 SMB 不支持安全的不可覆盖提交，导入器会失败且不会创建目标；请联系维护负责人改用经验证的共享盘，不要改用资源管理器复制。
+如果命令提示某月份存在 `YYYY-MM.json.lock`，立即停止；它记录写入机器、进程与 UTC 开始时间。不要由普通同事删除锁，更不要删除、改名或手工补写目标 JSON 或 `.json.ready`。**只有指定维护负责人**在确认所有同事的采集/导入任务均已结束并已保存锁文件内容作为故障记录后，才可恢复：JSON 和 `.ready` 都存在时，先独立核对 `.ready` 的 SHA-256 与 JSON（导入时还须与本机源 JSON 相同）并记录结果，保留两者，随后才可移走遗留锁；只有 JSON 和 `.ready` 都不存在时，才可移走遗留锁并重试。只有其中一个文件存在或哈希不一致时是未就绪异常，任何工具都不会读取或覆盖它；保留现场并交给维护负责人处置，不能用资源管理器补写。
 
 对于获明确批准的新客户仅当期例外，在生成和发布两条命令末尾都增加 `--allow-current-only`。对 UNC，不改变其它参数，仅把单引号内的 `Z:\seo-report-source-archive` 替换为 `'\\server\共享盘\seo-report-source-archive'`。
 

@@ -12,8 +12,8 @@ from typing import Any, Callable, Dict, Iterable, List, Mapping, Tuple
 import urllib.error
 import urllib.request
 
-from customer_registry import CustomerRecord, google_archive_path, require_active_customer
-from google_api_collector import month_dates, validate_complete_month_archive
+from customer_registry import CustomerRecord, require_active_customer
+from google_api_collector import month_dates, read_ready_complete_month_archive
 
 
 SEARCH_VOLUME_URL = "https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live"
@@ -265,12 +265,8 @@ def selected_rows_from_config(
             selected.append(row)
         return selected
     month = str(config["month"])
-    source_path = google_archive_path(archive_root, record, month)
-    source = json.loads(source_path.read_text(encoding="utf-8"))
-    if not isinstance(source, dict):
-        raise ValueError("共享 GA4/GSC 归档必须是 JSON 对象")
-    validate_complete_month_archive(archive_root, record.canonical_domain, month, source)
-    return select_dashboard_keywords(source.get("gsc", {}).get("gsc_queries", []), config)
+    snapshot = read_ready_complete_month_archive(archive_root, record.canonical_domain, month)
+    return select_dashboard_keywords(snapshot.payload["gsc"].get("gsc_queries", []), config)
 
 
 def main() -> int:

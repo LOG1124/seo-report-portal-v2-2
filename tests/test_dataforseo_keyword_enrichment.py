@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import sys
 import tempfile
 import unittest
@@ -53,6 +54,12 @@ class DataForSEOSourceClosureTests(unittest.TestCase):
         ]):
             return enrichment.main()
 
+    @staticmethod
+    def mark_ready(path: Path) -> None:
+        path.with_suffix(".json.ready").write_text(
+            json.dumps({"sha256": hashlib.sha256(path.read_bytes()).hexdigest()}), encoding="utf-8"
+        )
+
     def test_legacy_source_archive_config_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             config = self.write_config(Path(tmp), config_payload(source_archive="C:/legacy/other.json"))
@@ -68,6 +75,7 @@ class DataForSEOSourceClosureTests(unittest.TestCase):
             expected = root / "ga4-gsc" / "example.com" / "2026-07.json"
             expected.parent.mkdir(parents=True)
             expected.write_text(json.dumps(complete_source("other.example")), encoding="utf-8")
+            self.mark_ready(expected)
             config = self.write_config(Path(tmp), config_payload())
             with self.assertRaisesRegex(ValueError, "归档域名不匹配"):
                 self.run_main(config, root)
@@ -80,10 +88,23 @@ class DataForSEOSourceClosureTests(unittest.TestCase):
             source = root / "ga4-gsc" / "example.com" / "2026-07.json"
             source.parent.mkdir(parents=True)
             source.write_text(json.dumps(complete_source() | {"ga4": {}}), encoding="utf-8")
+            self.mark_ready(source)
             config = self.write_config(Path(tmp), config_payload())
             with patch.object(enrichment, "load_credentials", side_effect=AssertionError("credentials loaded")), patch.object(enrichment, "DataForSEOClient", side_effect=AssertionError("network client created")):
                 with self.assertRaisesRegex(ValueError, "非空的 GA4 与 GSC"):
                     self.run_main(config, root, "--execute")
+
+    def test_automatic_selection_rejects_unready_shared_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "archive"
+            root.mkdir()
+            write_registry(root)
+            source = root / "ga4-gsc" / "example.com" / "2026-07.json"
+            source.parent.mkdir(parents=True)
+            source.write_text(json.dumps(complete_source()), encoding="utf-8")
+            config = self.write_config(Path(tmp), config_payload())
+            with self.assertRaisesRegex(ValueError, "尚未就绪"):
+                self.run_main(config, root)
 
     def test_selected_keywords_still_require_registered_customer(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
