@@ -723,6 +723,23 @@
       };
       const channelName = value => ({'Direct':'直接访问','Organic Search':'自然搜索','Paid Search':'付费搜索','Organic Social':'自然社交','Referral':'引荐流量','Unassigned':'未分配'}[value] || value);
       const pageName = value => value === '/' ? '首页' : value;
+      const pageIdentity = row => String(row.page || row.path || '');
+      function pageDisplayName(row) {
+        const path = String(row.path || '');
+        const page = String(row.page || '');
+        if (!page) return pageName(path);
+        try {
+          const url = new URL(String(row.page || ''));
+          const canonicalHost = String(report.domain || '').trim().toLowerCase().replace(/^www\./, '');
+          const actualHost = url.hostname.toLowerCase().replace(/^www\./, '');
+          const localeRoot = /^\/[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/i.test(url.pathname.replace(/\/$/, ''));
+          if (url.pathname === '/' && !url.search && !url.hash && actualHost === canonicalHost) return '首页';
+          if (url.pathname === '/' || localeRoot) return page;
+        } catch (_) {
+          // Preserve the compact path for legacy payloads without a parseable GSC URL.
+        }
+        return pageName(path);
+      }
       const current = () => months[monthIndex] || {metrics:{},keywords:[],pages:[],channels:[],recommendations:[]};
       const previous = () => monthIndex > 0 ? months[monthIndex - 1] : null;
 
@@ -1002,12 +1019,12 @@
 
       function renderPages() {
         const query = el('google-seo-filter').value.trim().toLowerCase();
-        const sourceRows = reportRows('pages', 'path');
+        const sourceRows = reportRows('pages', 'page');
         const rows = [...sourceRows]
           .filter(row => `${row.path} ${row.page}`.toLowerCase().includes(query))
           .sort((a,b) => Number(b.clicks || 0) - Number(a.clicks || 0) || Number(b.impressions || 0) - Number(a.impressions || 0))
           .slice(0,10);
-        if (activePageDetail && !rows.some(row => row.path === activePageDetail)) {
+        if (activePageDetail && !rows.some(row => pageIdentity(row) === activePageDetail)) {
           activePageDetail = null;
           el('google-seo-page-detail').hidden = true;
         }
@@ -1023,7 +1040,7 @@
         const totalPosition = totals.impressions ? totals.positionWeight / totals.impressions : 0;
         const totalLabel = reportScope === 'period' ? '报告期页面维度合计' : 'GSC 总计';
         const totalRow = `<div class="seo-data-row seo-total-row text-small"><div>${totalLabel}</div><div>${number(totals.clicks)}</div><div>${number(totals.impressions)}</div><div>${number(totalCtr,2)}%</div><div>${number(totalPosition,2)}</div><div></div></div>`;
-        el('google-seo-pages').innerHTML = `<div class="seo-data-row header text-small"><div>页面</div><div>点击</div><div>展示</div><div>CTR</div><div>平均排名</div><div></div></div>${totalRow}` + (rows.length ? rows.map(row => `<div class="seo-data-row"><div class="seo-name"><div class="seo-name-text">${escapeHtml(pageName(row.path))}</div></div><div>${number(row.clicks)}</div><div>${number(row.impressions)}</div><div>${number(row.ctr,2)}%</div><div>${number(row.position,1)}</div><div><button class="seo-row-action" type="button" data-page-detail="${escapeHtml(row.path)}"><span>页面分析</span><span aria-hidden="true">↗</span></button></div></div>`).join('') : '<div class="seo-empty">没有匹配的页面</div>');
+        el('google-seo-pages').innerHTML = `<div class="seo-data-row header text-small"><div>页面</div><div>点击</div><div>展示</div><div>CTR</div><div>平均排名</div><div></div></div>${totalRow}` + (rows.length ? rows.map(row => `<div class="seo-data-row"><div class="seo-name"><div class="seo-name-text">${escapeHtml(pageDisplayName(row))}</div></div><div>${number(row.clicks)}</div><div>${number(row.impressions)}</div><div>${number(row.ctr,2)}%</div><div>${number(row.position,1)}</div><div><button class="seo-row-action" type="button" data-page-detail="${escapeHtml(pageIdentity(row))}"><span>页面分析</span><span aria-hidden="true">↗</span></button></div></div>`).join('') : '<div class="seo-empty">没有匹配的页面</div>');
         setDetailActionState('data-page-detail', activePageDetail, '页面分析', '收起分析');
         root.querySelectorAll('[data-page-detail]').forEach(button => button.addEventListener('click', () => {
           const pathValue = button.dataset.pageDetail;
@@ -1040,11 +1057,11 @@
         }));
       }
 
-      function renderPageDetail(path) {
-        const history = months.map(month => ({month:month.label,row:month.pages.find(item => item.path === path)})).filter(item => item.row);
+      function renderPageDetail(identity) {
+        const history = months.map(month => ({month:month.label,row:month.pages.find(item => pageIdentity(item) === identity)})).filter(item => item.row);
         const host = el('google-seo-page-detail');
         host.hidden = false;
-        host.innerHTML = `<div class="seo-detail-title">${escapeHtml(pageName(path))}</div><div class="seo-detail-grid">${history.map(item => `<div class="seo-detail-cell"><div class="text-small text-muted">${escapeHtml(item.month)}</div><div>${number(item.row.clicks)} 点击 · ${number(item.row.impressions)} 展示</div><div class="text-small">CTR ${number(item.row.ctr,2)}% · 平均排名 ${number(item.row.position,1)}</div></div>`).join('')}</div>`;
+        host.innerHTML = `<div class="seo-detail-title">${escapeHtml(pageDisplayName(history[0]?.row || {path:identity}))}</div><div class="seo-detail-grid">${history.map(item => `<div class="seo-detail-cell"><div class="text-small text-muted">${escapeHtml(item.month)}</div><div>${number(item.row.clicks)} 点击 · ${number(item.row.impressions)} 展示</div><div class="text-small">CTR ${number(item.row.ctr,2)}% · 平均排名 ${number(item.row.position,1)}</div></div>`).join('')}</div>`;
       }
 
       function renderChannels() {

@@ -26,7 +26,7 @@ Work from a team workspace, never from this installed skill directory. Read `ref
 - Every run writes secret-safe internal diagnostics outside public dashboard directories. Tell the user the execution state, location, verified detection, impact, safe actions taken, and next action.
 - Review the local report before publishing. Publish only after explicit approval.
 - **客户交付铁律：**最终回复的“文字总结”只能逐字复制已审核 `summary.md` 中 `## 运营总结` 标题及其编号正文；不得改写、删减、重排、补充、以自定义总结替换，或因任何用户偏好改变。在线报告链接可以单独提供，但不构成文字总结。
-- **页面显示与运营总结铁律：**所有客户可见的根路径 `/` 必须显示为“首页”，但不得改写原始 GA4/GSC 路径。运营总结的页面排行只按 GSC 页面点击量：月报用当月，季报/年报用整个指定报告期的点击合计；页面联动表使用同一口径，季报/年报默认展示报告期合计，避免用单月代替整个报告期。
+- **页面显示与运营总结铁律：**“搜索表现 × 页面体验”页面表只把客户主域（可带 `www`）、无参数的英语根页显示为“首页”；小语种首页（语言子域、语言参数或语言根路径）必须展示其完整 GSC URL，并以该完整 URL 区分和联动，不能与英语首页合并。其他客户可见的根路径 `/` 仍显示为“首页”。不得改写原始 GA4/GSC 路径。运营总结的页面排行只按 GSC 页面点击量：月报用当月，季报/年报用整个指定报告期的点击合计；页面联动表使用同一口径，季报/年报默认展示报告期合计，避免用单月代替整个报告期。
 - **运营总结国家/地区口径：**第 6 条只按 GA4 `organicGoogleSearchClicks`（Google 搜索自然点击次数）选出国家/地区；月报取当月，季报/年报取指定报告期合计。该指标要求 GA4 已启用 Search Console 关联；缺少该字段时如实显示“暂无可用数据”，不得回退为会话、GSC 点击或 GSC 展示。
 
 ## Workflow

@@ -45,6 +45,15 @@ class ReportPeriodUiStateTests(unittest.TestCase):
         self.assertNotIn("const reportGa4 = seoData.reportGa4", body)
         self.assertIn("row.engagementSeconds / row.engagementSessions", body)
 
+    def test_page_table_distinguishes_language_homepages_from_english_homepage(self) -> None:
+        """Only the canonical English root may be abbreviated as 首页."""
+        html = TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn("function pageDisplayName(row)", html)
+        self.assertIn("new URL(String(row.page || ''))", html)
+        self.assertIn("const localeRoot = /^\\/[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/i", html)
+        self.assertIn("reportRows('pages', 'page')", html)
+        self.assertIn("data-page-detail=\"${escapeHtml(pageIdentity(row))}\"", html)
+
 
 if __name__ == "__main__":
     unittest.main()
