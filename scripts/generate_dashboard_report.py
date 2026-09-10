@@ -10,7 +10,9 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from build_google_seo_dashboard import _domain_brand_token, _normalise_strategy_opportunities, build_dashboard_data
+from customer_registry import google_archive_path, require_active_customer
 from report_diagnostics import diagnostic, write_diagnostics
+from source_archive_usage import write_usage
 from validate_report_artifact import validate_report_artifact, validate_report_tree
 
 MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
@@ -441,7 +443,8 @@ def main() -> int:
     parser.add_argument("--start-month", required=True)
     parser.add_argument("--end-month")
     parser.add_argument("--domain", required=True)
-    parser.add_argument("--archive-dir", type=Path, required=True)
+    parser.add_argument("--archive-root", type=Path, required=True)
+    parser.add_argument("--allow-current-only", action="store_true")
     parser.add_argument("--dataforseo-archive-dir", type=Path)
     parser.add_argument("--seoagent-archive-dir", type=Path)
     parser.add_argument(
@@ -453,22 +456,29 @@ def main() -> int:
     parser.add_argument("--diagnostics-root", type=Path, default=Path("output/report-diagnostics"))
     args = parser.parse_args()
 
+    archive_root = args.archive_root.resolve()
     end = args.end_month or args.start_month
     requested = month_range(args.start_month, end)
     if args.type == "monthly" and len(requested) != 1:
         fail("月度报告只能包含一个月份")
-    archives = [args.archive_dir / f"{month}.json" for month in requested]
+    record = require_active_customer(archive_root, args.domain)
+    domain = record.canonical_domain
+    archives = [google_archive_path(archive_root, record, month) for month in requested]
     missing = [path.stem for path in archives if not path.exists()]
     if missing:
         fail(f"缺少月度归档：{', '.join(missing)}")
-    validate_archive_domains(archives, args.domain, required=True)
+    validate_archive_domains(archives, domain, required=True)
 
     type_labels = {"monthly": "月度报告", "quarterly": "季度报告", "yearly": "年度报告"}
     comparison_labels = {"monthly": "上月", "quarterly": "上个季度", "yearly": "上一年度"}
     previous_requested = month_range(shift_month(requested[0], -len(requested)), shift_month(requested[0], -1))
-    previous_archives = [args.archive_dir / f"{month}.json" for month in previous_requested]
-    validate_archive_domains(previous_archives, args.domain, required=False)
-    previous_available = all(path.exists() for path in previous_archives)
+    previous_archives = [google_archive_path(archive_root, record, month) for month in previous_requested]
+    missing_previous_months = [month for month, path in zip(previous_requested, previous_archives) if not path.is_file()]
+    if missing_previous_months and not args.allow_current_only:
+        fail(f"缺少对比期月度归档：{', '.join(missing_previous_months)}")
+    validate_archive_domains(previous_archives, domain, required=not missing_previous_months)
+    previous_available = not missing_previous_months
+    comparison_mode = "complete" if previous_available else "current_only_exception"
     enrichment_archive_dir = args.dataforseo_archive_dir
     payload = build_dashboard_data(
         archives,
@@ -492,19 +502,19 @@ def main() -> int:
     else:
         payload.setdefault("diagnostics", []).append(diagnostic(
             "PREVIOUS_PERIOD_ARCHIVE_MISSING", stage="archive_validation",
-            scope={"domain": args.domain, "report_months": requested},
-            detected={"requested_previous_months": previous_requested, "missing_months": [path.stem for path in previous_archives if not path.exists()]},
+            scope={"domain": domain, "report_months": requested},
+            detected={"requested_previous_months": previous_requested, "missing_months": missing_previous_months},
             impact="仅生成当前报告期汇总，不展示未经验证的环比或同比结论。",
             next_action="补齐同域官方 GA4/GSC 月度归档后重新生成报告。",
             status="warning",
         ))
     label = args.start_month if args.start_month == end else f"{args.start_month}_to_{end}"
-    output_dir = args.output_root / args.domain / args.type / label
+    output_dir = args.output_root / domain / args.type / label
     output_dir.mkdir(parents=True, exist_ok=True)
     current_metrics = payload["quarterComparison"]["current"]["metrics"]
     prior_metrics = (payload["quarterComparison"].get("previous") or {}).get("metrics", {})
     payload["report"] = {
-        "type": args.type, "typeLabel": type_labels[args.type], "label": label, "domain": args.domain,
+        "type": args.type, "typeLabel": type_labels[args.type], "label": label, "domain": domain,
         "rangeLabel": display_range(requested, args.type),
         "selectedMonths": requested,
         "comparison": {
@@ -523,18 +533,22 @@ def main() -> int:
     if count != 1:
         fail("看板模板中未找到 google-seo-data 数据块")
     (output_dir / "index.html").write_text(standalone_document(rendered + runtime_script()), encoding="utf-8")
-    title = f"{args.domain} {args.type}（{label}）"
-    (output_dir / "summary.md").write_text(summary(payload, title, args.domain), encoding="utf-8")
+    title = f"{domain} {args.type}（{label}）"
+    (output_dir / "summary.md").write_text(summary(payload, title, domain), encoding="utf-8")
     validate_report_artifact(output_dir)
-    payload.setdefault("diagnostics", []).extend(validate_report_tree(args.output_root / args.domain))
+    write_usage(
+        output_dir, archive_root, record, args.type, label, archives,
+        previous_archives if previous_available else [], comparison_mode,
+    )
+    payload.setdefault("diagnostics", []).extend(validate_report_tree(args.output_root / domain))
     payload["diagnostics"].append(diagnostic(
         "PUBLISH_REVIEW_REQUIRED", stage="publish_review",
-        scope={"domain": args.domain, "report": f"{args.type}/{label}"}, detected={"artifact_validation": "passed"},
+        scope={"domain": domain, "report": f"{args.type}/{label}"}, detected={"artifact_validation": "passed"},
         impact="报告仅在本地生成，尚未复制或发布。",
         next_action="人工复核本地 HTML、summary 和诊断后，获得明确发布批准再复制。",
         status="warning", safe_actions=["未改写月度原始归档", "未发布任何客户报告"],
     ))
-    diagnostics_dir = write_diagnostics(args.diagnostics_root / args.domain / args.type / label, payload["diagnostics"])
+    diagnostics_dir = write_diagnostics(args.diagnostics_root / domain / args.type / label, payload["diagnostics"])
     print(json.dumps({"output": str(output_dir), "months": requested, "diagnostics": str(diagnostics_dir)}, ensure_ascii=False))
     return 0
 

@@ -1,0 +1,9 @@
+{
+  "customers": [
+    {
+      "canonical_domain": "example.com",
+      "portal_slug": "example-com",
+      "status": "active"
+    }
+  ]
+}

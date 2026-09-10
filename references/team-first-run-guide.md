@@ -1,49 +1,49 @@
 # 同事首次上手：从采集到在线报告链接
 
-本指南适用于 `seo-report-portal-v2-2`。每位同事都能完成**本地 → SMB → OSS**，但不得跳过数据、付费或发布批准门禁。
+本指南适用于 `seo-report-portal-v2-3`。每位同事都能完成**本地 → SMB → OSS**，但不得跳过数据、付费或发布批准门禁。
 
 在 Windows 首次使用前，先阅读 [Windows 配置](windows-first-run.md)；不要把 macOS 的 `/Volumes/共享盘`、`.venv/bin/python` 或 `chmod` 命令照搬到 Windows。
 
-## 已安装 v2.2 的安全更新：v2.2.1
+## 安装或升级 v2.3
 
-这是 Skill 的补丁更新，不需要重新配置 Google、DataForSEO、SEOAgent、SMB 或 OSS。管理员只需通过安全渠道提供新的 `seo-report-portal-v2-2.zip` 和 SHA-256；同事只替换全局 Skill 目录，不修改客户工作区。
+这次更新不需要重新配置 Google、DataForSEO、SEOAgent、SMB 或 OSS。管理员只需通过安全渠道提供新的 `seo-report-portal-v2-3.zip` 和 SHA-256；同事只替换全局 Skill 目录，不修改客户工作区。
 
 更新时必须保留以下内容不变：客户工作区的 `private/`、`workflows/automation/input/`、`output/dashboards/`、`~/.codex/config.toml` 以及已经发布的报告。旧的全局 Skill 目录先移动到带时间戳的备份目录，整个过程不删除文件；若现有全局 Skill 目录内出现 `private/`，先停止并报告，不要把凭据带入新包。
 
 macOS/Linux 已安装版本更新：
 
 ```bash
-shasum -a 256 /path/to/seo-report-portal-v2-2.zip
+shasum -a 256 /path/to/seo-report-portal-v2-3.zip
 stage_dir="$(mktemp -d)"
-unzip -q /path/to/seo-report-portal-v2-2.zip -d "$stage_dir"
-test -f "$stage_dir/seo-report-portal-v2-2/SKILL.md"
-test ! -e "$stage_dir/seo-report-portal-v2-2/private"
-skill_dir=~/.codex/skills/seo-report-portal-v2-2
-backup_dir=~/.codex/skill-backups/seo-report-portal-v2-2-pre-2.2.1-$(date +%Y%m%d%H%M%S)
+unzip -q /path/to/seo-report-portal-v2-3.zip -d "$stage_dir"
+test -f "$stage_dir/seo-report-portal-v2-3/SKILL.md"
+test ! -e "$stage_dir/seo-report-portal-v2-3/private"
+skill_dir=~/.codex/skills/seo-report-portal-v2-3
+backup_dir=~/.codex/skill-backups/seo-report-portal-v2-3-pre-update-$(date +%Y%m%d%H%M%S)
 test ! -e "$skill_dir/private"
 mkdir -p "$(dirname "$backup_dir")"
 mv "$skill_dir" "$backup_dir"
-mv "$stage_dir/seo-report-portal-v2-2" "$skill_dir"
+mv "$stage_dir/seo-report-portal-v2-3" "$skill_dir"
 ```
 
 Windows 已安装版本更新：
 
 ```powershell
-$zip = 'C:\path\to\seo-report-portal-v2-2.zip'
-$stage = Join-Path $env:TEMP ('seo-report-portal-v2-2-' + [guid]::NewGuid())
-$skill = Join-Path $env:USERPROFILE '.codex\skills\seo-report-portal-v2-2'
-$backup = Join-Path $env:USERPROFILE ('.codex\skill-backups\seo-report-portal-v2-2-pre-2.2.1-' + (Get-Date -Format yyyyMMddHHmmss))
+$zip = 'C:\path\to\seo-report-portal-v2-3.zip'
+$stage = Join-Path $env:TEMP ('seo-report-portal-v2-3-' + [guid]::NewGuid())
+$skill = Join-Path $env:USERPROFILE '.codex\skills\seo-report-portal-v2-3'
+$backup = Join-Path $env:USERPROFILE ('.codex\skill-backups\seo-report-portal-v2-3-pre-update-' + (Get-Date -Format yyyyMMddHHmmss))
 Get-FileHash $zip -Algorithm SHA256
 Expand-Archive -LiteralPath $zip -DestinationPath $stage
-if (!(Test-Path (Join-Path $stage 'seo-report-portal-v2-2\SKILL.md'))) { throw '候选包缺少 SKILL.md' }
-if (Test-Path (Join-Path $stage 'seo-report-portal-v2-2\private')) { throw '候选包包含 private，停止更新' }
+if (!(Test-Path (Join-Path $stage 'seo-report-portal-v2-3\SKILL.md'))) { throw '候选包缺少 SKILL.md' }
+if (Test-Path (Join-Path $stage 'seo-report-portal-v2-3\private')) { throw '候选包包含 private，停止更新' }
 if (Test-Path (Join-Path $skill 'private')) { throw '现有全局 Skill 包含 private，停止更新' }
 New-Item -ItemType Directory -Force (Split-Path $backup) | Out-Null
 Move-Item $skill $backup
-Move-Item (Join-Path $stage 'seo-report-portal-v2-2') $skill
+Move-Item (Join-Path $stage 'seo-report-portal-v2-3') $skill
 ```
 
-替换后重启 Codex，让新 Skill 生效；不需要重建客户工作区或重新填写任何密钥。出现问题时，将新目录移走，再把对应时间戳备份目录移回 `~/.codex/skills/seo-report-portal-v2-2`（Windows 使用同样的 `Move-Item`），然后重新启动 Codex。
+替换后重启 Codex，让新 Skill 生效；不需要重建客户工作区或重新填写任何密钥。出现问题时，将新目录移走，再把对应时间戳备份目录移回 `~/.codex/skills/seo-report-portal-v2-3`（Windows 使用同样的 `Move-Item`），然后重新启动 Codex。
 
 ## 管理员先完成
 
@@ -55,24 +55,32 @@ Move-Item (Join-Path $stage 'seo-report-portal-v2-2') $skill
 
 ## 同事首次配置
 
-在自己的客户工作区创建 `private/` 和 `scripts/`，复制无密钥模板与跨平台发布器。命令因系统不同：macOS 可用 Shell；Windows 请按 [Windows 配置](windows-first-run.md) 使用 PowerShell 与 Python。
+在自己的客户工作区只创建 `private/` 与报告输出目录；不要创建或复制 `scripts/`。采集、校验、导入和发布都从已安装的 v2.3 Skill 目录运行。Windows 请按 [Windows 配置](windows-first-run.md) 使用 PowerShell 与 Python。
 
 只在本机填写 `private/dataforseo.env`、`private/ossutilconfig` 和 Google 服务账号 JSON。`private/oss.env` 指向本机 `ossutil`、`ossutilconfig` 和已连接的 SMB 归档根路径；不要填写或提交真实凭据到其他文件。
+
+## 共享原始档案首次设置
+
+1. 连接共享原始档案根目录。macOS 使用 `/Volumes/共享盘/seo-report-source-archive`；Windows 使用映射盘路径或 UNC，具体命令见 [Windows 配置](windows-first-run.md)。该共享盘是 guest 读写，**不是保密归档位置**。
+2. 从 `assets/customer-registry.example.json` 创建 `<共享原始档案根目录>/customer-registry.json`。在采集某客户前，先添加一条 active 的真实域名 ↔ 报告 slug 记录。
+3. 每次采集必须传入 `--archive-root <共享原始档案根目录> --month YYYY-MM`；每次生成也必须传入同一个 `--archive-root`。缺上期档案会阻止普通报告；只有获明确批准的新客户例外才能在生成和发布命令中都加 `--allow-current-only`。
+4. `GOOGLE_SOURCE_ARCHIVE_ROOT` 仅可作为 `oss.env` 内供人复制到发布器 `--source-archive-root` 的便利值。采集器和生成器绝不会隐式读取它。
 
 ## 无消费与无写入检查
 
 1. 重启 Codex 后确认 `seoagent` MCP 显示正常；不要用真实查询测试。
-2. 确认 `private/oss.env` 的 `OSS_ARCHIVE_ROOT` 是本机可访问的 SMB 路径。
-3. 生成本地报告并运行产物校验。macOS 可使用 `./.venv/bin/python`；Windows 使用 `.venv\\Scripts\\python.exe` 或 `py -3`：
+2. 确认 `private/oss.env` 的 `OSS_ARCHIVE_ROOT` 是本机可访问的报告 SMB 路径；若填写了 `GOOGLE_SOURCE_ARCHIVE_ROOT`，仍须在发布命令中显式传入该路径。
+3. 生成本地报告并使用已安装 v2.3 Skill 的校验器检查产物。Windows 先设置 `$skill`，再使用 `py -3`：
 
-```text
-python scripts/validate_report_artifact.py --report-dir <output/dashboards/domain/type/period> --domain-root <output/dashboards/domain>
+```powershell
+$skill = Join-Path $env:USERPROFILE '.codex\skills\seo-report-portal-v2-3'
+py -3 "$skill\scripts\validate_report_artifact.py" --report-dir <output/dashboards/domain/type/period> --domain-root <output/dashboards/domain>
 ```
 
-4. 只运行跨平台发布 dry-run；它不会写入 SMB 或 OSS：
+4. 只运行已安装 v2.3 Skill 的跨平台发布 dry-run；它不会写入 SMB 或 OSS：
 
-```text
-python scripts/publish_oss_report.py --local-report-dir <output/dashboards/domain/type/period> --client-slug <client-slug> --type <monthly|quarterly|yearly> --period <period> --dry-run
+```powershell
+py -3 "$skill\scripts\publish_oss_report.py" --local-report-dir <output/dashboards/domain/type/period> --client-slug <client-slug> --type <monthly|quarterly|yearly> --period <period> --source-archive-root <shared-source-root> --dry-run
 ```
 
 ## 每份报告的发布步骤
@@ -81,7 +89,7 @@ python scripts/publish_oss_report.py --local-report-dir <output/dashboards/domai
 2. 如需 DataForSEO 或 SEOAgent，先获得该次请求的范围、费用上限和明确确认；归档必须匹配客户和月份。
 3. 生成报告并人工核对 `index.html`、`summary.md` 和内部 `diagnostic.md`。
 4. 获得这份报告的明确发布批准。
-5. 执行 `publish_oss_report.py`。它按以下顺序处理，任何一步失败即停止：
+5. 执行 `publish_oss_report.py --source-archive-root <shared-source-root>`。它先验证非公开的 `source-archive-usage.json`，再按以下顺序处理，任何一步失败即停止；仅发布三件套。仅当期例外必须同时增加 `--allow-current-only`：
 
 ```text
 本地 index.html/dashboard-data.json/summary.md

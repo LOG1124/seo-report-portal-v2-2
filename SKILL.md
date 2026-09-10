@@ -1,11 +1,11 @@
 ---
-name: seo-report-portal-v2-2
+name: seo-report-portal-v2-3
 description: Create, review, and publish client-isolated monthly, quarterly, and yearly SEO dashboards from GA4, GSC, approved DataForSEO keyword-market snapshots, and SEOAgent strategy archives. Use for team SEO reporting, first-party performance analysis, limited keyword-market verification, and strategy-opportunity reporting.
 ---
 
-# SEO Report Portal v2.2
+# SEO Report Portal v2.3
 
-**Active identity: `seo-report-portal-v2-2`.** Do not use, install, package, or inspect legacy `seo-report-portal` assets except as an explicitly requested rollback reference.
+**Active identity: `seo-report-portal-v2-3`.** Do not use, install, package, or inspect legacy `seo-report-portal` assets except as an explicitly requested rollback reference.
 
 Work from a team workspace, never from this installed skill directory. Read `references/team-usage-guide.md` before first use. Read `references/third-party-data-guide.md` before any third-party collection or archive import.
 
@@ -19,7 +19,7 @@ Work from a team workspace, never from this installed skill directory. Read `ref
 - Keep provider archives isolated by domain and collection month. Never overwrite GSC/GA4 source archives.
 - Credentials are local only. Do not put API credentials, service-account JSON, MCP tokens, customer archives, or published reports in the skill package or a public repository.
 - DataForSEO and SEOAgent are optional report inputs. A report without either archive must still generate from GSC/GA4 data.
-- Validate every current and predecessor GA4/GSC archive against the requested domain before aggregation. A missing predecessor creates a current-period-only report; any cross-domain archive blocks generation.
+- Resolve every GA4/GSC archive through the active customer registry and explicit shared `--archive-root`. Validate current and predecessor archives against the requested domain before aggregation. Missing predecessor archives block normal generation; a current-period-only exception requires explicit `--allow-current-only` and writes a non-public source-usage record. Any cross-domain archive blocks generation.
 - The report-period aggregate is canonical. Monthly selection may change only monthly detail panels; it must never alter management summary, report-period KPIs, channels, strategy metadata, or action plans.
 - The user's explicit continuous month range is authoritative. Generate and, after the normal explicit publication approval, publish that exact range even when its final month is still in progress. Do not silently replace it with the last closed month or add a "preview" label. Use only the data actually available in the selected monthly archives; real archive, permission, or collection failures must remain visible.
 - Hide an optional DataForSEO or SEOAgent panel when its archive scope is invalid. Never fill an empty panel with another month, another client, or a third-party estimate.
@@ -31,12 +31,13 @@ Work from a team workspace, never from this installed skill directory. Read `ref
 
 ## Workflow
 
-1. Configure the local Google service account and customer read-only access as described in `references/team-usage-guide.md`.
-2. Collect immutable monthly GA4/GSC archives with `scripts/google_api_collector.py`.
-3. Generate a base dashboard with `scripts/generate_dashboard_report.py`.
-4. For market validation, first determine the GSC-selected terms. Propose the bounded DataForSEO scope and cost, obtain confirmation, run `scripts/dataforseo_keyword_enrichment.py --dry-run`, then run `--execute` only after confirmation.
-5. For strategy opportunities, collect through the teammate's locally configured SEOAgent MCP, normalize the response into the archive schema in `assets/seoagent-archive.example.json`, and store it outside the skill package.
-6. Re-generate the dashboard with explicit optional inputs. Keep the diagnostics path outside `output/dashboards/`:
+1. Connect the shared source root and create `<shared-source-root>/customer-registry.json` from `assets/customer-registry.example.json`.
+2. Before collecting any customer, add exactly one active `canonical_domain` ↔ `portal_slug` record to that registry.
+3. Import a verified v2.2 local archive with `<installed-skill-dir>/scripts/import_google_archive.py --archive-root <shared-source-root> --source-file <legacy-json> --month YYYY-MM`, or collect one natural month with `<installed-skill-dir>/scripts/google_api_collector.py --archive-root <shared-source-root> --month YYYY-MM`. Both require non-empty GA4 and GSC sections, write only `<shared-source-root>/ga4-gsc/<canonical-domain>/YYYY-MM.json`, and never overwrite an existing month.
+4. Generate with `<installed-skill-dir>/scripts/generate_dashboard_report.py --archive-root <shared-source-root>`. A missing predecessor stops a normal report. Use `--allow-current-only` only for an explicitly approved new-customer exception.
+5. For market validation, first determine the GSC-selected terms from the active customer's complete shared archive. Propose the bounded DataForSEO scope and cost, obtain confirmation, run `<installed-skill-dir>/scripts/dataforseo_keyword_enrichment.py --archive-root <shared-source-root> --dry-run`, then run `--execute` only after confirmation.
+6. For strategy opportunities, collect through the teammate's locally configured SEOAgent MCP, normalize the response into the archive schema in `assets/seoagent-archive.example.json`, and store it outside the skill package.
+7. Re-generate the dashboard with explicit optional inputs. Keep the diagnostics path outside `output/dashboards/`:
 
 ```text
 --dataforseo-archive-dir <domain-specific-dataforseo-archive-dir>
@@ -44,28 +45,30 @@ Work from a team workspace, never from this installed skill directory. Read `ref
 --diagnostics-root <internal-diagnostic-root>
 ```
 
-7. Validate the exact local artifact before it can be copied:
+8. Validate the exact local artifact before it can be copied:
 
 ```text
-python scripts/validate_report_artifact.py --report-dir <output/dashboards/domain/type/period> --domain-root <output/dashboards/domain>
+python <installed-skill-dir>/scripts/validate_report_artifact.py --report-dir <output/dashboards/domain/type/period> --domain-root <output/dashboards/domain>
 ```
 
-8. Check the local HTML, summary, and internal `diagnostic.md`. Obtain explicit approval for this exact report before publishing.
-9. Publish only with `scripts/publish_oss_report.py`: validate the three reviewed files, copy them to the approved SMB archive, compare SHA-256 values, upload from the SMB archive to OSS, and verify the public `index.html` SHA-256. Configure the SMB archive root for the local OS (macOS mount, Windows mapped drive, or Windows UNC path); never assume another teammate's mount path. The only supported public path is:
+9. Check the local HTML, summary, and internal `diagnostic.md`. Obtain explicit approval for this exact report before publishing.
+10. Publish only with `<installed-skill-dir>/scripts/publish_oss_report.py --source-archive-root <shared-source-root>`. It validates the non-public `source-archive-usage.json`, but publishes only `index.html`, `dashboard-data.json`, and `summary.md`. A current-only exception also requires `--allow-current-only` here. Configure the SMB report archive root for the local OS (macOS mount, Windows mapped drive, or Windows UNC path); never assume another teammate's mount path. The only supported public path is:
 
 ```text
 https://reports.jzyseo.com/reports/<client-slug>/<monthly|quarterly|yearly>/<period>/
 ```
 
-10. In the final customer delivery, label the exact copied `## 运营总结` section from the reviewed `summary.md` as “文字总结”. Do not generate another prose summary, including when asked to change its wording or emphasis.
+11. In the final customer delivery, label the exact copied `## 运营总结` section from the reviewed `summary.md` as “文字总结”. Do not generate another prose summary, including when asked to change its wording or emphasis.
+
+The shared SMB source archive has guest read/write access and is therefore not a confidential archive location. `GOOGLE_SOURCE_ARCHIVE_ROOT` in `oss.env` is only a documented convenience for composing the publisher command; collector and generator never read it implicitly and always require `--archive-root`.
 
 Read `references/team-first-run-guide.md` before a teammate's first end-to-end run. It covers Google access, optional providers, SMB, individual RAM credentials, ossutil, approval, and the required local-to-SMB-to-OSS order.
 On Windows, also read `references/windows-first-run.md` before configuring paths or running the publisher.
 
-9. Before replacing the v2 ZIP or global v2 installation, create a staged ZIP and require parity for `SKILL.md`, template, generator, and `agents/openai.yaml`:
+Before replacing the v2.3 ZIP or global v2.3 installation, create a staged ZIP and require parity for the complete v2.3 contract:
 
 ```text
-python scripts/check_package_parity.py --source <seo-report-portal-v2-2-source> --staged-zip <candidate.zip> --installed <global-seo-report-portal-v2-2>
+python <installed-skill-dir>/scripts/check_package_parity.py --source <seo-report-portal-v2-3-source> --staged-zip <candidate.zip> --installed <global-seo-report-portal-v2-3>
 ```
 
 ## Resources

@@ -1,5 +1,6 @@
 {
   "credentials_file": "private/google-service-account.json",
+  "service_account_email": "service-account@example.invalid",
   "ga4": {
     "property_id": "123456789",
     "row_limit": 1000

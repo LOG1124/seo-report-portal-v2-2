@@ -7,13 +7,17 @@ import argparse
 import calendar
 import json
 import os
+import re
+import socket
 import sys
-from datetime import date, datetime
+import uuid
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 from urllib.parse import quote
 
 from collection import CollectedDataStore, ProjectContext, normalized_domain
+from customer_registry import google_archive_path, require_active_customer
 
 
 GA4_SCOPE = "https://www.googleapis.com/auth/analytics.readonly"
@@ -34,6 +38,8 @@ CHANNEL_NAMES = {
     "Organic Video": "自然视频",
     "Unassigned": "未分配",
 }
+
+CANONICAL_MONTH_RE = re.compile(r"^[0-9]{4}-[0-9]{2}$")
 
 
 class SearchConsoleRestClient:
@@ -399,16 +405,127 @@ def _period_from_args(context: ProjectContext, month: Optional[str], start: Opti
     return start_value, end_value, label
 
 
-def _save_archive(directory: Path, label: str, payload: Dict[str, Any]) -> Path:
-    directory.mkdir(parents=True, exist_ok=True)
-    path = directory / f"{label}.json"
-    existing = _load_object(path) if path.exists() else {}
-    existing.update(payload)
-    existing["archived_at"] = datetime.now().astimezone().isoformat(timespec="seconds")
-    temporary = path.with_suffix(".json.tmp")
-    temporary.write_text(json.dumps(existing, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
-    return path
+def month_dates(month: str) -> List[str]:
+    """Return the inclusive start and end dates for one calendar month."""
+    try:
+        if not isinstance(month, str) or not CANONICAL_MONTH_RE.fullmatch(month):
+            raise ValueError
+        year, month_number = (int(part) for part in month.split("-", 1))
+        last_day = calendar.monthrange(year, month_number)[1]
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise ValueError("月份格式必须为 YYYY-MM") from exc
+    return [f"{year:04d}-{month_number:02d}-01", f"{year:04d}-{month_number:02d}-{last_day:02d}"]
+
+
+def validate_complete_month_archive(
+    archive_root: Path, domain: str, month: str, payload: Dict[str, Any]
+) -> tuple[Any, Path]:
+    """Validate the identity and complete first-party payload for one source month."""
+    record = require_active_customer(archive_root, domain)
+    path = google_archive_path(archive_root, record, month)
+    expected_period = month_dates(month)
+    if payload.get("domain") != record.canonical_domain:
+        raise ValueError("归档域名不匹配")
+    if payload.get("period") != expected_period:
+        raise ValueError("归档周期必须是指定自然月")
+    for platform in ("ga4", "gsc"):
+        section = payload.get(platform)
+        if not isinstance(section, dict) or not section:
+            raise ValueError("归档必须同时包含非空的 GA4 与 GSC 数据")
+    return record, path
+
+
+def _temporary_bytes(path: Path, content: bytes) -> Path:
+    """Write and sync complete bytes beside their eventual path."""
+    temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        with temporary.open("xb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+    return temporary
+
+
+def _link_new(source: Path, destination: Path, *, exists_message: str) -> None:
+    """Atomically create destination from a complete same-directory file, or fail safe."""
+    try:
+        os.link(source, destination)
+    except FileExistsError as exc:
+        raise FileExistsError(exists_message) from exc
+    except OSError as exc:
+        raise OSError(
+            f"文件系统不支持安全的不可覆盖归档提交，未创建目标：{destination}"
+        ) from exc
+
+
+def _lock_payload() -> bytes:
+    return (json.dumps({
+        "hostname": socket.gethostname(),
+        "pid": os.getpid(),
+        "created_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }, ensure_ascii=False) + "\n").encode("utf-8")
+
+
+def write_new_archive_bytes(path: Path, content: bytes) -> Path:
+    """Create a complete immutable archive with a provenance-bearing lock."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock = path.with_suffix(".json.lock")
+    lock_temporary = _temporary_bytes(lock, _lock_payload())
+    lock_acquired = False
+    content_temporary: Optional[Path] = None
+    committed = False
+    try:
+        _link_new(
+            lock_temporary, lock,
+            exists_message=f"该月份正在归档或需人工检查锁文件：{lock}",
+        )
+        lock_acquired = True
+        if path.exists():
+            raise FileExistsError(f"档案已存在，未改写：{path}")
+        content_temporary = _temporary_bytes(path, content)
+        _link_new(content_temporary, path, exists_message=f"档案已存在，未改写：{path}")
+        committed = True
+        return path
+    finally:
+        if committed:
+            cleanup_paths = [item for item in (content_temporary, lock_temporary) if item is not None]
+            for cleanup_path in cleanup_paths:
+                try:
+                    cleanup_path.unlink(missing_ok=True)
+                except OSError as exc:
+                    print(
+                        f"警告：原始档案已提交：{path}；无法清理 {cleanup_path}（{exc}）。"
+                        f"保留锁 {lock} 供维护负责人按目标已存在流程复核。",
+                        file=sys.stderr,
+                    )
+                    break
+            else:
+                try:
+                    lock.unlink(missing_ok=True)
+                except OSError as exc:
+                    print(
+                        f"警告：原始档案已提交：{path}；无法清理 {lock}（{exc}）。"
+                        f"保留锁供维护负责人按目标已存在流程复核。",
+                        file=sys.stderr,
+                    )
+        else:
+            lock_temporary.unlink(missing_ok=True)
+            if content_temporary is not None:
+                content_temporary.unlink(missing_ok=True)
+            if lock_acquired:
+                lock.unlink(missing_ok=True)
+
+
+def save_new_month_archive(archive_root: Path, domain: str, month: str, payload: Dict[str, Any]) -> Path:
+    """Write one complete domain-isolated Google archive once, without replacing it."""
+    _, path = validate_complete_month_archive(archive_root, domain, month, payload)
+    archived_payload = dict(payload)
+    archived_payload["archived_at"] = datetime.now().astimezone().isoformat(timespec="seconds")
+    content = (json.dumps(archived_payload, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    return write_new_archive_bytes(path, content)
 
 
 def main() -> int:
@@ -417,13 +534,22 @@ def main() -> int:
     parser.add_argument("--config", default="workflows/automation/config/google_api.json")
     parser.add_argument("--project-input", default="workflows/automation/config/project_input.json")
     parser.add_argument("--collected-data", default="workflows/automation/input/collected_data.json")
-    parser.add_argument("--archive-dir", default="workflows/automation/input/google_api_archive")
+    parser.add_argument("--archive-root", type=Path, required=True, help="共享原始档案根目录")
     parser.add_argument("--month", help="按自然月采集并归档，格式 YYYY-MM")
     parser.add_argument("--start", help="自定义开始日期 YYYY-MM-DD")
     parser.add_argument("--end", help="自定义结束日期 YYYY-MM-DD")
-    parser.add_argument("--dry-run", action="store_true", help="调用 API 并输出摘要，但不写入 collected_data.json")
+    parser.add_argument("--dry-run", action="store_true", help="调用 API 并输出摘要，不写入 collected_data.json 或原始档案")
     parser.add_argument("--archive-only", action="store_true", help="写入月度归档，但不改写 collected_data.json")
     args = parser.parse_args()
+    if not args.dry_run and not args.month:
+        parser.error("非 --dry-run 模式必须提供 --month YYYY-MM 以创建自然月原始档案")
+    if not args.dry_run and args.platform != "all":
+        parser.error("共享原始档案必须同时采集 GA4 与 GSC；单平台仅可用于 --dry-run")
+    if args.month:
+        try:
+            month_dates(args.month)
+        except ValueError as exc:
+            parser.error(str(exc))
 
     config_path = Path(args.config)
     config = _load_object(config_path)
@@ -469,7 +595,7 @@ def main() -> int:
             result["recorded"].extend(_record_fields(store, gsc_fields, "Google Search Console API", GSC_SOURCE_URL))
 
     if not args.dry_run:
-        archive_path = _save_archive(Path(args.archive_dir), archive_label, archive_payload)
+        archive_path = save_new_month_archive(args.archive_root, context.domain, archive_label, archive_payload)
         result["archive"] = str(archive_path)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0

@@ -1,7 +1,6 @@
 {
   "domain": "example.com",
   "month": "2026-06",
-  "source_archive": "workflows/automation/input/google_api_archive/example.com/2026-06.json",
   "location_code": 2840,
   "language_code": "en",
   "serp_device": "desktop",

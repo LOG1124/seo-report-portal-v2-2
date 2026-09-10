@@ -12,6 +12,9 @@ from typing import Any, Callable, Dict, Iterable, List, Mapping, Tuple
 import urllib.error
 import urllib.request
 
+from customer_registry import CustomerRecord, google_archive_path, require_active_customer
+from google_api_collector import month_dates, validate_complete_month_archive
+
 
 SEARCH_VOLUME_URL = "https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live"
 SERP_URL = "https://api.dataforseo.com/v3/serp/google/organic/live/regular"
@@ -44,10 +47,12 @@ def load_trial_config(path: Path) -> Dict[str, Any]:
         raise ValueError("试水配置 max_keywords 必须固定为 5")
     if payload["serp_device"] != "desktop":
         raise ValueError("试水配置 serp_device 必须固定为 desktop")
-    has_source_selection = all(key in payload for key in ("source_archive", "include_terms", "exclude_terms"))
+    if "source_archive" in payload:
+        raise ValueError("source_archive 已不受支持；GSC 来源由 --archive-root、客户注册表和月份唯一确定")
+    has_source_selection = all(key in payload for key in ("include_terms", "exclude_terms"))
     has_explicit_selection = "selected_keywords" in payload
     if has_source_selection == has_explicit_selection:
-        raise ValueError("试水配置必须二选一：source_archive 自动选词，或 selected_keywords 明确词表")
+        raise ValueError("试水配置必须二选一：include_terms/exclude_terms 自动选词，或 selected_keywords 明确词表")
     if has_explicit_selection:
         rows = payload["selected_keywords"]
         if not isinstance(rows, list) or len(rows) != 5:
@@ -243,11 +248,13 @@ def _is_success(payload: Mapping[str, Any]) -> bool:
     return payload.get("status_code") == 20000 and payload.get("task_status_code") == 20000
 
 
-def _archive_path(config: Mapping[str, Any]) -> Path:
-    return Path(str(config["output_archive_dir"])) / str(config["domain"]) / f"{config['month']}.json"
+def _archive_path(config: Mapping[str, Any], record: CustomerRecord) -> Path:
+    return Path(str(config["output_archive_dir"])) / record.canonical_domain / f"{config['month']}.json"
 
 
-def selected_rows_from_config(config: Mapping[str, Any]) -> List[Dict[str, Any]]:
+def selected_rows_from_config(
+    config: Mapping[str, Any], archive_root: Path, record: CustomerRecord
+) -> List[Dict[str, Any]]:
     """Return either GSC-selected rows or a pre-approved, fixed quarterly word list."""
     if "selected_keywords" in config:
         selected: List[Dict[str, Any]] = []
@@ -257,13 +264,19 @@ def selected_rows_from_config(config: Mapping[str, Any]) -> List[Dict[str, Any]]
             row.setdefault("selection_reason", "已确认的季度 GSC 重点词")
             selected.append(row)
         return selected
-    source = json.loads(Path(str(config["source_archive"])).read_text(encoding="utf-8"))
+    month = str(config["month"])
+    source_path = google_archive_path(archive_root, record, month)
+    source = json.loads(source_path.read_text(encoding="utf-8"))
+    if not isinstance(source, dict):
+        raise ValueError("共享 GA4/GSC 归档必须是 JSON 对象")
+    validate_complete_month_archive(archive_root, record.canonical_domain, month, source)
     return select_dashboard_keywords(source.get("gsc", {}).get("gsc_queries", []), config)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="按看板 GSC 选词进行 5+1 DataForSEO 试水采集")
     parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--archive-root", type=Path, required=True)
     parser.add_argument("--credentials", type=Path, required=True)
     action = parser.add_mutually_exclusive_group(required=True)
     action.add_argument("--dry-run", action="store_true")
@@ -271,7 +284,9 @@ def main() -> int:
     args = parser.parse_args()
 
     config = load_trial_config(args.config)
-    selected = selected_rows_from_config(config)
+    record = require_active_customer(args.archive_root, str(config["domain"]))
+    month_dates(str(config["month"]))
+    selected = selected_rows_from_config(config, args.archive_root, record)
     if len(selected) != 5:
         raise ValueError(f"筛选后必须恰好得到 5 个关键词，当前为 {len(selected)}")
     keywords = [str(row["query"]) for row in selected]
@@ -303,7 +318,7 @@ def main() -> int:
     else:
         payload["serp"] = {"keyword": primary_keyword, "skipped": "search_volume_failed"}
 
-    archive = write_trial_archive(_archive_path(config), payload)
+    archive = write_trial_archive(_archive_path(config, record), payload)
     print(json.dumps({"mode": "execute", "selected_keywords": keywords, "archive": str(archive), "costs": payload["costs"], "search_volume_ok": _is_success(search_volume), "serp_ok": isinstance(payload["serp"], dict) and _is_success(payload["serp"])}, ensure_ascii=False, indent=2))
     return 0
 

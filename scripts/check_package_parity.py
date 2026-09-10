@@ -16,14 +16,23 @@ from report_diagnostics import diagnostic
 CANONICAL_FILES = (
     "SKILL.md",
     "assets/dashboard-template.html",
+    "assets/customer-registry.example.json",
+    "assets/dataforseo-trial.example.json",
     "assets/oss.env.example",
     "assets/ossutilconfig.example",
     "assets/oss-report-publisher-policy.json",
+    "scripts/customer_registry.py",
+    "scripts/google_api_collector.py",
+    "scripts/import_google_archive.py",
+    "scripts/dataforseo_keyword_enrichment.py",
     "scripts/generate_dashboard_report.py",
     "scripts/publish_oss_report.py",
     "scripts/publish_oss_report.sh",
+    "scripts/source_archive_usage.py",
     "references/team-first-run-guide.md",
+    "references/team-usage-guide.md",
     "references/windows-first-run.md",
+    "references/third-party-data-guide.md",
     "agents/openai.yaml",
 )
 

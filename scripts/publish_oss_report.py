@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 from pathlib import Path
 import re
@@ -14,6 +15,9 @@ import sys
 import tempfile
 from typing import Dict, Iterable
 from urllib.request import urlopen
+
+from customer_registry import require_active_customer
+from source_archive_usage import verify_usage
 
 
 FILES = ("index.html", "dashboard-data.json", "summary.md")
@@ -74,6 +78,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--type", choices=sorted(REPORT_TYPES), required=True)
     parser.add_argument("--period", required=True)
     parser.add_argument("--oss-env", type=Path, default=Path(os.environ.get("OSS_ENV_FILE", "private/oss.env")))
+    parser.add_argument("--source-archive-root", type=Path, required=True)
+    parser.add_argument("--allow-current-only", action="store_true")
     parser.add_argument("--replace-archive", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
@@ -88,6 +94,18 @@ def main() -> int:
 
     report_dir = args.local_report_dir.resolve()
     report_files = tuple(required_report_files(report_dir))
+    try:
+        report_domain = json.loads((report_dir / "dashboard-data.json").read_text(encoding="utf-8"))["report"]["domain"]
+    except (KeyError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("dashboard-data.json 缺少报告域名") from exc
+    source_root = args.source_archive_root.resolve()
+    record = require_active_customer(source_root, report_domain)
+    if record.portal_slug != args.client_slug:
+        raise ValueError("客户标识与共享映射不一致")
+    verify_usage(
+        report_dir, source_root, record, args.type, args.period, args.allow_current_only
+    )
+
     env_file = args.oss_env.resolve()
     if not env_file.is_file():
         raise FileNotFoundError(f"缺少私密配置：{env_file}；请复制 oss.env.example 并填写本机路径。")

@@ -442,20 +442,15 @@ def build_dashboard_data(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="生成 Google SEO 看板数据")
-    parser.add_argument("--archive-dir", default="workflows/automation/input/google_api_archive")
-    parser.add_argument("--output", default="workflows/automation/input/google_seo_dashboard.json")
-    parser.add_argument("--all-months", action="store_true", help="保留传入归档中的全部月份，不限制为最近三个月")
-    args = parser.parse_args()
-    archive_paths = sorted(Path(args.archive_dir).glob("*.json"))
-    if not archive_paths:
-        raise FileNotFoundError(f"没有找到月度归档: {args.archive_dir}")
-    payload = build_dashboard_data(archive_paths, report_months=None if args.all_months else 3)
-    output = Path(args.output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"months": len(payload["months"]), "output": str(output)}, ensure_ascii=False))
-    return 0
+    parser = argparse.ArgumentParser(description="旧版看板数据入口（已禁用）")
+    parser.add_argument("--archive-dir", help=argparse.SUPPRESS)
+    parser.add_argument("--output", help=argparse.SUPPRESS)
+    parser.add_argument("--all-months", action="store_true", help=argparse.SUPPRESS)
+    parser.parse_args()
+    parser.error(
+        "此入口已禁用，避免 --archive-dir 绕过 v2.3 共享原始档案校验；"
+        "请改用 generate_dashboard_report.py --archive-root <shared-source-root>。"
+    )
 
 
 if __name__ == "__main__":

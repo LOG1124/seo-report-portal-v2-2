@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 import sys
 import tempfile
 import unittest
@@ -58,6 +57,30 @@ class ReportPeriodAggregationTests(unittest.TestCase):
         path.write_text(json.dumps(payload), encoding="utf-8")
         return path
 
+    def write_registry(self, root: Path) -> None:
+        (root / "customer-registry.json").write_text(json.dumps({"customers": [{
+            "canonical_domain": "example.com", "portal_slug": "example-com", "status": "active",
+        }]}), encoding="utf-8")
+
+    def write_google_archive(self, root: Path, month: str, payload: dict | None = None) -> Path:
+        payload = payload or archive(
+            "example.com", clicks=1, impressions=10, sessions=1, key_events=0,
+            channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
+        )
+        payload["period"] = [f"{month}-01", f"{month}-30"]
+        return self.write_archive(root / "ga4-gsc" / "example.com", month, payload)
+
+    def generation_args(self, root: Path, month: str, report_type: str = "monthly", end_month: str | None = None) -> list[str]:
+        args = [
+            "generate_dashboard_report.py", "--type", report_type, "--start-month", month,
+            "--domain", "example.com", "--archive-root", str(root),
+            "--template", str(PACKAGE / "assets" / "dashboard-template.html"),
+            "--output-root", str(root / "dashboards"), "--diagnostics-root", str(root / "diagnostics"),
+        ]
+        if end_month:
+            args.extend(["--end-month", end_month])
+        return args
+
     def test_report_ga4_is_derived_from_monthly_archives_and_matches_channel_totals(self) -> None:
         """Removing or independently altering reportGa4 must not change canonical GA4 totals."""
         with tempfile.TemporaryDirectory() as tmp:
@@ -106,70 +129,77 @@ class ReportPeriodAggregationTests(unittest.TestCase):
         """A complete but wrong-client predecessor period must not silently become a comparison."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            archive_dir = root / "archives"
-            archive_dir.mkdir()
+            self.write_registry(root)
             for label in ("2026-06", "2026-07", "2026-08"):
-                self.write_archive(archive_dir, label, archive(
+                self.write_google_archive(root, label, archive(
                     "example.com", clicks=1, impressions=10, sessions=1, key_events=0,
                     channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
                 ))
             for label in ("2026-03", "2026-04", "2026-05"):
-                self.write_archive(archive_dir, label, archive(
+                self.write_archive(root / "ga4-gsc" / "example.com", label, archive(
                     "other.example", clicks=1, impressions=10, sessions=1, key_events=0,
                     channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
                 ))
             template = root / "template.html"
             template.write_text('<script id="google-seo-data" type="application/json">{}</script>', encoding="utf-8")
-            args = [
-                "generate_dashboard_report.py", "--type", "quarterly", "--start-month", "2026-06", "--end-month", "2026-08",
-                "--domain", "example.com", "--archive-dir", str(archive_dir), "--template", str(template),
-                "--output-root", str(root / "output"),
-            ]
+            args = self.generation_args(root, "2026-06", "quarterly", "2026-08")
+            args[args.index("--template") + 1] = str(template)
+            args[args.index("--output-root") + 1] = str(root / "output")
             with patch.object(sys, "argv", args):
                 with self.assertRaisesRegex(ValueError, "归档域名不匹配"):
                     generate_report()
 
-    def test_generated_report_keeps_diagnostic_newlines_as_valid_embedded_json(self) -> None:
-        """A missing predecessor warning must not corrupt the HTML data block with a raw newline."""
+    def test_missing_predecessor_blocks_regular_monthly_report(self) -> None:
+        """Removing the prior monthly archive must stop a normal monthly report."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            archive_dir = root / "archives"
-            self.write_archive(archive_dir, "2026-06", archive(
-                "example.com", clicks=1, impressions=10, sessions=1, key_events=0,
-                channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
-            ))
-            template = PACKAGE / "assets" / "dashboard-template.html"
-            output_root = root / "dashboards"
-            args = [
-                "generate_dashboard_report.py", "--type", "monthly", "--start-month", "2026-06", "--domain", "example.com",
-                "--archive-dir", str(archive_dir), "--template", str(template), "--output-root", str(output_root),
-                "--diagnostics-root", str(root / "diagnostics"),
-            ]
+            self.write_registry(root)
+            self.write_google_archive(root, "2026-06")
+            args = self.generation_args(root, "2026-06")
+            with patch.object(sys, "argv", args):
+                with self.assertRaisesRegex(ValueError, "缺少对比期月度归档"):
+                    generate_report()
+
+    def test_allow_current_only_writes_exception_sidecar(self) -> None:
+        """An explicit exception produces a local provenance record, never a silent report."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_registry(root)
+            self.write_google_archive(root, "2026-06")
+            args = self.generation_args(root, "2026-06") + ["--allow-current-only"]
             with patch.object(sys, "argv", args):
                 self.assertEqual(generate_report(), 0)
-            html = (output_root / "example.com" / "monthly" / "2026-06" / "index.html").read_text(encoding="utf-8")
-            embedded = re.search(r'<script id="google-seo-data" type="application/json">(.*?)</script>', html, re.S)
-            self.assertIsNotNone(embedded)
-            payload = json.loads(embedded.group(1))
-            self.assertIn("PREVIOUS_PERIOD_ARCHIVE_MISSING", [item["code"] for item in payload["diagnostics"]])
+            usage = json.loads((root / "dashboards" / "example.com" / "monthly" / "2026-06" / "source-archive-usage.json").read_text(encoding="utf-8"))
+            self.assertEqual(usage["comparison_mode"], "current_only_exception")
+            self.assertEqual(usage["portal_slug"], "example-com")
+
+    def test_complete_monthly_report_writes_current_and_previous_usage(self) -> None:
+        """A complete comparison must name exactly the two hashed source archives it used."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_registry(root)
+            self.write_google_archive(root, "2026-05")
+            self.write_google_archive(root, "2026-06")
+            with patch.object(sys, "argv", self.generation_args(root, "2026-06")):
+                self.assertEqual(generate_report(), 0)
+            usage = json.loads((root / "dashboards" / "example.com" / "monthly" / "2026-06" / "source-archive-usage.json").read_text(encoding="utf-8"))
+            self.assertEqual(usage["comparison_mode"], "complete")
+            self.assertEqual([item["role"] for item in usage["archives"]], ["current", "previous"])
+            self.assertTrue(all(len(item["sha256"]) == 64 for item in usage["archives"]))
 
     def test_user_selected_in_progress_month_generates_without_preview_label(self) -> None:
         """A present-month archive is publishable as the requested period, not silently reclassified."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            archive_dir = root / "archives"
+            self.write_registry(root)
             current = archive(
                 "example.com", clicks=1, impressions=10, sessions=1, key_events=0,
                 channels=[{"sessionDefaultChannelGroup": "Direct", "sessions": 1, "keyEvents": 0}],
             )
             current["period"] = ["2026-08-01", "2026-08-25"]
-            self.write_archive(archive_dir, "2026-08", current)
+            self.write_google_archive(root, "2026-08", current)
             output_root = root / "dashboards"
-            args = [
-                "generate_dashboard_report.py", "--type", "monthly", "--start-month", "2026-08", "--domain", "example.com",
-                "--archive-dir", str(archive_dir), "--template", str(PACKAGE / "assets" / "dashboard-template.html"),
-                "--output-root", str(output_root), "--diagnostics-root", str(root / "diagnostics"),
-            ]
+            args = self.generation_args(root, "2026-08") + ["--allow-current-only"]
             with patch.object(sys, "argv", args):
                 self.assertEqual(generate_report(), 0)
             report_dir = output_root / "example.com" / "monthly" / "2026-08"

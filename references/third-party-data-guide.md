@@ -9,9 +9,9 @@
 
 ## DataForSEO：先确认，再执行
 
-1. 从当前报告期 GSC 查询词中选出看板要展示的机会词。
+1. 工具只从 `--archive-root` 下、客户注册表中 active 客户的 `<共享根>/ga4-gsc/<真实域名>/<YYYY-MM>.json` 读取当前报告期 GSC 查询词；不接受配置中的 `source_archive` 路径。
 2. 在执行前列出域名、国家/语言、词数、SERP 数、用途和费用上限。
-3. 等待明确确认后，先运行 `dataforseo_keyword_enrichment.py --dry-run`。
+3. 等待明确确认后，先运行 `dataforseo_keyword_enrichment.py --archive-root <共享原始档案根> --dry-run`。它会在读取凭据或请求接口前，验证该月档案的客户、自然月及非空 GA4/GSC 区段。
 4. 只有确认仍有效时才运行 `--execute`。
 5. 失败时停止并报告；不得自动重试付费请求。
 
